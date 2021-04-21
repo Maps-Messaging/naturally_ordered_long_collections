@@ -18,9 +18,7 @@
 
 package io.mapsmessaging.utilities.collections;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -76,9 +74,9 @@ public class MappedBufferHelper {
       // but that method should be added if sun.misc.Unsafe is removed.
       unsafeClass = Class.forName("jdk.internal.misc.Unsafe");
     }
-    Method clean = unsafeClass.getMethod("invokeCleaner", ByteBuffer.class);
+    var clean = unsafeClass.getMethod("invokeCleaner", ByteBuffer.class);
     clean.setAccessible(true);
-    Field theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
+    var theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
     theUnsafeField.setAccessible(true);
     Object theUnsafe = theUnsafeField.get(null);
     clean.invoke(theUnsafe, cb);

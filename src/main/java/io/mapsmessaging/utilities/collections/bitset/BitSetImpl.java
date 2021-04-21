@@ -173,15 +173,15 @@ public class BitSetImpl implements BitSet {
     long[] longs = bitSet.toLongArray();
     int longCount = map.getLongCount();
     if(longs.length < longCount){
-      long[] expand = new long[longCount];
+      var expand = new long[longCount];
       System.arraycopy(longs, 0, expand, 0, longs.length);
       longs = expand;
     }
 
     int len = Math.min(map.getLongCount(), longs.length);
-    for (int x = 0; x < len; x++) {
-      long lhs = longs[x];
-      long rhs = map.getLong(x);
+    for (var x = 0; x < len; x++) {
+      var lhs = longs[x];
+      var rhs = map.getLong(x);
       longs[x] = operator.operation(lhs, rhs);
     }
     bitSet = java.util.BitSet.valueOf(longs);

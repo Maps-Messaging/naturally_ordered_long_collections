@@ -65,7 +65,7 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
 
   @Override
   public int size() {
-    int counter = 0;
+    var counter = 0;
     for (OffsetBitSet bitMap : tree.values()) {
       counter += bitMap.cardinality();
     }
@@ -131,7 +131,7 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
   @Override
   public <T> T[] toArray(T[] a) {
     Iterator<Long> itr = iterator();
-    for (int x = 0; x < a.length && itr.hasNext(); x++) {
+    for (var x = 0; x < a.length && itr.hasNext(); x++) {
       a[x] = (T) itr.next();
     }
     return a;
@@ -248,7 +248,7 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
   @Override
   public boolean retainAll(@NonNull @NotNull Collection<?> c) {
     Iterator<Long> itr = this.iterator();
-    boolean changed = false;
+    var changed = false;
     while(itr.hasNext()){
       long val = itr.next();
       if(!c.contains(val)){

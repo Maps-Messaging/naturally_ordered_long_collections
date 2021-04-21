@@ -89,17 +89,17 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public boolean set(int bit) {
-    int internalBit = checkBoundary(bit);
-    int position = getLongPosition(internalBit);
-    int bitPos = internalBit % LONG_BITS;
+    var internalBit = checkBoundary(bit);
+    var position = getLongPosition(internalBit);
+    var bitPos = internalBit % LONG_BITS;
 
     long bitMask = 1L << (bitPos);
 
     //
     // Get the int and now set the bit within the long
     //
-    long map = backing.getLong(position);
-    long original = map;
+    var map = backing.getLong(position);
+    var original = map;
     map |= bitMask;
     backing.putLong(position, map);
     return map != original;
@@ -107,17 +107,17 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public boolean clear(int bit) {
-    int internalBit = checkBoundary(bit);
-    int position = getLongPosition(internalBit);
-    int bitPos = internalBit % LONG_BITS;
+    var internalBit = checkBoundary(bit);
+    var position = getLongPosition(internalBit);
+    var bitPos = internalBit % LONG_BITS;
 
     long bitMask = 1L << (bitPos);
 
     //
     // Get the long and now set the bit within the long
     //
-    long map = backing.getLong(position);
-    long original = map;
+    var map = backing.getLong(position);
+    var original = map;
     map &= ~bitMask;
     backing.putLong(position, map);
     return map != original;
@@ -125,31 +125,31 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public boolean isSet(int bit) {
-    int internalBit = checkBoundary(bit);
-    int position = getLongPosition(internalBit);
-    int bitPos = internalBit % LONG_BITS;
+    var internalBit = checkBoundary(bit);
+    var position = getLongPosition(internalBit);
+    var bitPos = internalBit % LONG_BITS;
 
     long bitMask = 1L << (bitPos);
 
     //
     // Get the long and now set the bit within the long
     //
-    long map = backing.getLong(position);
+    var map = backing.getLong(position);
     return (map & bitMask) != 0;
   }
 
   @Override
   public boolean isSetAndClear(int bit) {
-    int internalBit = checkBoundary(bit);
-    int position = getLongPosition(internalBit);
-    int bitPos = internalBit % LONG_BITS;
+    var internalBit = checkBoundary(bit);
+    var position = getLongPosition(internalBit);
+    var bitPos = internalBit % LONG_BITS;
 
     long bitMask = 1L << (bitPos);
 
     //
     // Get the long and now set the bit within the long
     //
-    long map = backing.getLong(position);
+    var map = backing.getLong(position);
     boolean val = (map & bitMask) != 0;
     if (val) {
       map &= ~bitMask;
@@ -185,13 +185,13 @@ public class ByteBufferBackedBitMap implements BitSet {
     long lastWordMask = LONG_MASK >>> -toOffset;
     if (startWordIndex == endWordIndex) {
       // Case 1: One word
-      long map = backing.getLong(startWordIndex);
+      var map = backing.getLong(startWordIndex);
       map ^= (firstWordMask & lastWordMask);
       backing.putLong(startWordIndex, map);
     } else {
       // Case 2: Multiple words
       // Handle first word
-      long map = backing.getLong(startWordIndex);
+      var map = backing.getLong(startWordIndex);
       map ^= (firstWordMask & lastWordMask);
       backing.putLong(startWordIndex, map);
 
@@ -227,8 +227,8 @@ public class ByteBufferBackedBitMap implements BitSet {
    */
   @Override
   public int cardinality() {
-    int sum = 0;
-    for (int x = 0; x < longs; x++) {
+    var sum = 0;
+    for (var x = 0; x < longs; x++) {
       int pos = (x << BYTE_BIT_SHIFT) + longStartIdx;
       sum += Long.bitCount(backing.getLong(pos));
     }
@@ -237,7 +237,7 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public boolean isEmpty() {
-    for (int x = 0; x < longs; x++) {
+    for (var x = 0; x < longs; x++) {
       int pos = (x << BYTE_BIT_SHIFT) + longStartIdx;
       if (backing.getLong(pos) != 0) {
         return false;
@@ -255,7 +255,7 @@ public class ByteBufferBackedBitMap implements BitSet {
       return -1;
     }
 
-    int internalBit = checkBoundary(fromIndex);
+    var internalBit = checkBoundary(fromIndex);
     int position = getLongPosition(internalBit);
     long word = backing.getLong(position) & (LONG_MASK << internalBit);
 
@@ -275,7 +275,7 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public int nextSetBitAndClear(int fromIndex) {
-    int internalBit = checkBoundary(fromIndex);
+    var internalBit = checkBoundary(fromIndex);
     int position = getLongPosition(internalBit);
     long word = backing.getLong(position) & (LONG_MASK << internalBit);
 
@@ -302,7 +302,7 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public int nextClearBit(int fromIndex) {
-    int internalBit = checkBoundary(fromIndex);
+    var internalBit = checkBoundary(fromIndex);
     int position = getLongPosition(internalBit);
 
     long word = ~backing.getLong(position);
@@ -325,7 +325,7 @@ public class ByteBufferBackedBitMap implements BitSet {
     if (fromIndex < 0 || fromIndex >= capacity){
       return -1;
     }
-    int internalBit = checkBoundary(fromIndex);
+    var internalBit = checkBoundary(fromIndex);
     int position = getLongPosition(internalBit);
     long word = backing.getLong(position) & (LONG_MASK >>> -((fromIndex + 1)%64));
 
@@ -345,7 +345,7 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public int previousClearBit(int fromIndex) {
-    int internalBit = checkBoundary(fromIndex);
+    var internalBit = checkBoundary(fromIndex);
     int position = getLongPosition(internalBit);
     long word = ~backing.getLong(position) & (LONG_MASK >>> -(fromIndex + 1));
 
@@ -367,7 +367,7 @@ public class ByteBufferBackedBitMap implements BitSet {
   // <editor-fold desc="Complete bit map operations">
   @Override
   public void clear() {
-    for (int x = 0; x < longs; x++) {
+    for (var x = 0; x < longs; x++) {
       int pos = (x << BYTE_BIT_SHIFT) + longStartIdx;
       backing.putLong(pos, 0);
     }
@@ -375,11 +375,11 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
+    var sb = new StringBuilder();
     sb.append("ID:").append(uniqueId);
     sb.append(" Size:").append(cardinality()).append(" Offset:").append(offset).append(" {");
-    int counter = 0;
-    int idx = 0;
+    var counter = 0;
+    var idx = 0;
     while (counter < 1024 && idx < capacity) {
       idx = nextSetBit(idx);
       if (idx < 0) {
@@ -419,22 +419,22 @@ public class ByteBufferBackedBitMap implements BitSet {
     if (test instanceof ByteBufferBackedBitMap) {
       ByteBufferBackedBitMap map = (ByteBufferBackedBitMap) test;
       int len = Math.min(map.longs, longs);
-      for (int x = 0; x < len; x++) {
+      for (var x = 0; x < len; x++) {
         int position = (x << BYTE_BIT_SHIFT) + longStartIdx;
-        long lhs = backing.getLong(position);
-        long rhs = map.backing.getLong(position);
+        var lhs = backing.getLong(position);
+        var rhs = map.backing.getLong(position);
         long result = operator.operation(lhs, rhs);
         backing.putLong(position, result);
       }
     } else if (test instanceof BitSetImpl) {
       BitSetImpl map = (BitSetImpl) test;
       long[] values = map.getWords();
-      int rhsIndex = 0;
+      var rhsIndex = 0;
       int len = Math.min(values.length, longs);
-      for (int x = 0; x < len; x++) {
+      for (var x = 0; x < len; x++) {
         int position = (x << BYTE_BIT_SHIFT) + longStartIdx;
-        long lhs = backing.getLong(position);
-        long rhs = values[rhsIndex];
+        var lhs = backing.getLong(position);
+        var rhs = values[rhsIndex];
         rhsIndex++;
         long result = operator.operation(lhs, rhs);
         backing.putLong(position, result);

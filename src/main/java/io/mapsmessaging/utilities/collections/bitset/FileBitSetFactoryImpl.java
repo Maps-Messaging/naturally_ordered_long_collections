@@ -50,23 +50,23 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     bufferSize = size / BITS_PER_BYTE;
     free = new ArrayList<>();
     used = new ArrayList<>();
-    File testFile = new File(filename);
-    File parent = testFile.getParentFile();
+    var testFile = new File(filename);
+    var parent = testFile.getParentFile();
     if (parent != null) {
       Files.createDirectories(testFile.getParentFile().toPath());
     }
 
     raf = new RandomAccessFile(testFile, "rw");
     emptyBuffer = new byte[bufferSize];
-    for (int x = 0; x < bufferSize; x++) {
+    for (var x = 0; x < bufferSize; x++) {
       emptyBuffer[x] = 0;
     }
     long len = raf.length();
     long pos = 0;
     while (pos < len) {
       raf.seek(pos);
-      long uniqueId = raf.readLong();
-      long startId = raf.readLong();
+      var uniqueId = raf.readLong();
+      var startId = raf.readLong();
       pos += HEADER_SIZE;
       ByteBufferBackedBitMap bitmap = map(pos, uniqueId);
       free.add(new FileOffsetBitSet(bitmap, pos - HEADER_SIZE, startId, this));
@@ -77,7 +77,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   @Override
   public void delete() throws IOException {
     close();
-    File check = new File(filename);
+    var check = new File(filename);
     if (check.exists()) {
       Files.delete(check.toPath());
     }

@@ -45,7 +45,7 @@ public class PriorityCollection<T> implements Collection<T> {
     priorityStructure = new ArrayList<>();
     prioritySize = priorityBound;
     priorityFactory = factory;
-    for (int x = 0; x < priorityBound; x++) {
+    for (var x = 0; x < priorityBound; x++) {
       priorityStructure.add(new LinkedList<>());
     }
     entryCount=new AtomicLong(0);
@@ -81,7 +81,7 @@ public class PriorityCollection<T> implements Collection<T> {
   }
 
   public String toString(){
-    StringBuilder sb = new StringBuilder("Count:");
+    var sb = new StringBuilder("Count:");
     sb.append(entryCount).append(",");
     for (Queue<T> queue : priorityStructure) {
       if(!queue.isEmpty()) {
@@ -128,7 +128,7 @@ public class PriorityCollection<T> implements Collection<T> {
   }
 
   public int size() {
-    int size = 0;
+    var size = 0;
     for (Queue<T> ts : priorityStructure) {
       if (!ts.isEmpty()) {
         size += ts.size();
@@ -148,8 +148,8 @@ public class PriorityCollection<T> implements Collection<T> {
 
   @Override
   public boolean remove(Object obj) {
-    T entry = (T) obj;
-    boolean result = false;
+    var entry = (T) obj;
+    var result = false;
     if (priorityFactory != null) {
       int priority = priorityFactory.getPriority(entry);
       result = priorityStructure.get(priority).remove(entry);
@@ -172,7 +172,7 @@ public class PriorityCollection<T> implements Collection<T> {
     if(rhsCollection instanceof PriorityCollection){
       // Copy, but maintain the priority
       PriorityCollection<T> priorityRhs = (PriorityCollection<T>)rhsCollection;
-      for(int x=0;x<priorityStructure.size();x++){
+      for(var x=0;x<priorityStructure.size();x++){
         Queue<T> lhs = priorityStructure.get(x);
         lhs.addAll(priorityRhs.priorityStructure.get(x));
       }
@@ -211,7 +211,7 @@ public class PriorityCollection<T> implements Collection<T> {
   @Override
   public <T1> T1[] toArray(T1[] a) {
     Iterator<?> itr = iterator();
-    for (int x = 0; x < a.length && itr.hasNext(); x++) {
+    for (var x = 0; x < a.length && itr.hasNext(); x++) {
       a[x] = (T1) itr.next();
     }
     return a;
@@ -229,7 +229,7 @@ public class PriorityCollection<T> implements Collection<T> {
 
   @Override
   public boolean removeAll(Collection<?> c) {
-    boolean result = true;
+    var result = true;
     for (Object l : c) {
       if (!remove(l)) {
         result = false;
@@ -241,7 +241,7 @@ public class PriorityCollection<T> implements Collection<T> {
   @Override
   public boolean retainAll(@NotNull Collection<?> c) {
     Iterator<?> itr = iterator();
-    boolean changed = false;
+    var changed = false;
     while(itr.hasNext()){
       Object val = itr.next();
       if(!c.contains(val)){
