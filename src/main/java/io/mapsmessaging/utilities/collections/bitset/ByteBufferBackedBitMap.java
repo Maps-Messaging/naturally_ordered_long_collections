@@ -160,12 +160,12 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public void flip(int bit) {
-    int internalBit = checkBoundary(bit);
+    var internalBit = checkBoundary(bit);
     int position = getLongPosition(internalBit);
     int bitPos = internalBit % LONG_BITS;
 
     long bitMask = 1L << (bitPos);
-    long map = backing.getLong(position);
+    var map = backing.getLong(position);
     map ^= bitMask;
     backing.putLong(position, map);
   }
