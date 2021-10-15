@@ -31,6 +31,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class NaturalOrderedLongList extends NaturalOrderedCollection implements List<Long> {
 
+  public NaturalOrderedLongList() {}
+
   public NaturalOrderedLongList(int id, BitSetFactory factory) {
     super(id, factory);
   }

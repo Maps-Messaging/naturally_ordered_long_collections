@@ -27,6 +27,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements Queue<Long> {
 
+  public NaturalOrderedLongQueue() {}
+
   public NaturalOrderedLongQueue(int id, @NonNull @NotNull BitSetFactory factory) {
     super(id, factory);
   }

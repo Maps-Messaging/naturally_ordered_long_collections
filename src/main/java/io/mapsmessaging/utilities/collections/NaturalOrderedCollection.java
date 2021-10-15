@@ -19,6 +19,7 @@
 package io.mapsmessaging.utilities.collections;
 
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.OffsetBitSet;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,6 +40,11 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
   protected final BitSetFactory factory;
   private final int uniqueId;
   private final int size;
+
+
+  public NaturalOrderedCollection() {
+    this(0, new BitSetFactoryImpl(8192));
+  }
 
   public NaturalOrderedCollection(int id, @NonNull BitSetFactory factory) {
     tree = new TreeMap<>(new OffsetBitSetComparator());
