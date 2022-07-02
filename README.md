@@ -28,4 +28,4 @@ Then include the dependency
 
 
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Naturally_Ordered_Long_Collections&metric=alert_status)](https://sonarcloud.io/dashboard?id=Naturally_Ordered_Long_Collections)
+[![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/summary/new_code?id=Naturally_Ordered_Long_Collections)
