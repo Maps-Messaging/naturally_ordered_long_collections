@@ -331,12 +331,14 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
 
     @Override
     public void forEachRemaining(Consumer<? super Long> action) {
-      throw new UnsupportedOperationException();
+      Objects.requireNonNull(action);
+      while (hasNext()) {
+        action.accept(next());
+      }
     }
   }
 
   public static final class IORunTimeException extends RuntimeException{
-
     public IORunTimeException(String s, IOException e) {
       super(s, e);
     }

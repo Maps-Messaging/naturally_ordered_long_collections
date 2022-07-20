@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import lombok.NonNull;
@@ -193,7 +194,8 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
 
     @Override
     public void forEachRemaining(Consumer<? super Long> action) {
-      throw new UnsupportedOperationException();
-    }
+      Objects.requireNonNull(action);
+      while (hasNext())
+        action.accept(next());    }
   }
 }
