@@ -26,6 +26,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
@@ -68,13 +69,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
       var startId = raf.readLong();
       pos += HEADER_SIZE;
       ByteBufferBackedBitMap bitmap = map(pos, uniqueId);
-      FileOffsetBitSet bitSet = new FileOffsetBitSet(bitmap, pos - HEADER_SIZE, startId, this);
-      if(uniqueId == -1) {
-        free.add(bitSet);
-      }
-      else{
-        used.add(bitSet);
-      }
+      free.add(new FileOffsetBitSet(bitmap, pos - HEADER_SIZE, startId, this));
       pos += bufferSize;
     }
   }
@@ -141,19 +136,13 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   @Override
   public List<OffsetBitSet> get(long uniqueId) {
     List<OffsetBitSet> response = new ArrayList<>();
-    for (FileOffsetBitSet bitset : used) {
+    Iterator<FileOffsetBitSet> freeList = free.iterator();
+    while (freeList.hasNext()) {
+      FileOffsetBitSet bitset = freeList.next();
       if (bitset.getUniqueId() == uniqueId) {
+        freeList.remove();
+        used.add(bitset);
         response.add(bitset);
-      }
-    }
-    if(response.isEmpty()){
-      for (FileOffsetBitSet bitset : free) {
-        if (bitset.getUniqueId() == uniqueId) {
-          free.remove(bitset);
-          used.add(bitset);
-          response.add(bitset);
-          break;
-        }
       }
     }
     return response;
@@ -162,11 +151,6 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   @Override
   public List<Long> getUniqueIds() {
     List<Long> response = new ArrayList<>();
-    for (FileOffsetBitSet bitset : used) {
-      if (!response.contains(bitset.getUniqueId())) {
-        response.add(bitset.getUniqueId());
-      }
-    }
     for (FileOffsetBitSet bitset : free) {
       if (!response.contains(bitset.getUniqueId())) {
         response.add(bitset.getUniqueId());
