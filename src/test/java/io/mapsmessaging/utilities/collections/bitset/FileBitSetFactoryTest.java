@@ -57,6 +57,7 @@ public class FileBitSetFactoryTest extends BitSetFactoryTest{
     }
 
     try( BitSetFactory bitSetFactory = createFactory(1024)) {
+      Assertions.assertEquals(1024, bitSetFactory.getSize());
       Assertions.assertFalse(bitSetFactory.getUniqueIds().isEmpty());
       for(long id:bitSetFactory.getUniqueIds()){
         List<OffsetBitSet> bitSets = bitSetFactory.get(id);
