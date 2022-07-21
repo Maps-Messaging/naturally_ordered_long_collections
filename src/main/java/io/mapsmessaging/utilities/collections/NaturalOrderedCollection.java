@@ -62,10 +62,8 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
   }
 
   @Override
-  public void close() {
-    for (OffsetBitSet offsetBitSet : tree.values()) {
-      factory.close(offsetBitSet);
-    }
+  public void close() throws IOException {
+    factory.close();
     tree.clear();
   }
 
