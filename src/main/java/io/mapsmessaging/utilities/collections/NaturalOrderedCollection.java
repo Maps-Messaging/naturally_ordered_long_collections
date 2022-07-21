@@ -34,7 +34,7 @@ import java.util.function.Predicate;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable {
+public class NaturalOrderedCollection implements Collection<Long> {
 
   protected final TreeMap<Long, OffsetBitSet> tree;
   protected final BitSetFactory factory;
@@ -61,9 +61,7 @@ public class NaturalOrderedCollection implements Collection<Long>, AutoCloseable
     return uniqueId;
   }
 
-  @Override
-  public void close() throws IOException {
-    factory.close();
+  public void close()  {
     tree.clear();
   }
 
