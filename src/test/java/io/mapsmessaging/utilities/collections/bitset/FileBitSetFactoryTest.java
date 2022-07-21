@@ -39,7 +39,7 @@ public class FileBitSetFactoryTest extends BitSetFactoryTest{
     try( BitSetFactory bitSetFactory = createFactory(1024)) {
       long id = System.currentTimeMillis();
       OffsetBitSet bitSet = bitSetFactory.open(id, 1);
-      bitSetFactory.close(bitSet);
+      bitSetFactory.release(bitSet);
       Assertions.assertFalse(bitSetFactory.getUniqueIds().isEmpty());
       Assertions.assertFalse(bitSetFactory.get(-1).isEmpty());
     }

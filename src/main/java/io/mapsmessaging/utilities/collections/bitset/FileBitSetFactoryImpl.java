@@ -128,10 +128,17 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public void close(@NonNull @NotNull OffsetBitSet bitset) {
+    free.add((FileOffsetBitSet) bitset);
+    used.remove(bitset);
+  }
+
+  @Override
+  public void release(@NonNull @NotNull OffsetBitSet bitset) {
     bitset.reset(0, -1);
     free.add((FileOffsetBitSet) bitset);
     used.remove(bitset);
   }
+
 
   @Override
   public List<OffsetBitSet> get(long uniqueId) {
@@ -189,7 +196,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
     @Override
     public void close() {
-      factory.close(this);
+      factory.release(this);
     }
 
     @Override

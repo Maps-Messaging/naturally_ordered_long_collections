@@ -43,6 +43,10 @@ public class ByteBufferBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public void close(@NonNull @NotNull OffsetBitSet bitset) {
+  }
+
+  @Override
+  public void release(OffsetBitSet bitset) {
     bitset.clearAll();
   }
 

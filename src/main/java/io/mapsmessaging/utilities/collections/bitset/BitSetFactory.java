@@ -47,6 +47,8 @@ public abstract class BitSetFactory implements AutoCloseable {
 
   public abstract void close(OffsetBitSet bitset);
 
+  public abstract void release(OffsetBitSet bitset);
+
   public abstract OffsetBitSet open(long uniqueId, long id) throws IOException;
 
   public abstract List<OffsetBitSet> get(long uniqueId);

@@ -34,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>Please note: The order of priority is the larger the priority value the high the priority and
  * the closer to the top of the queue it will appear.
  */
-public class PriorityQueue<T> extends PriorityCollection<T> implements Queue<T>, AutoCloseable {
+public class PriorityQueue<T> extends PriorityCollection<T> implements Queue<T> {
 
   public PriorityQueue(int priorityBound, @NonNull @NotNull PriorityFactory<T> factory) {
     super(priorityBound, factory);

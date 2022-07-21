@@ -62,16 +62,15 @@ public class PriorityCollection<T> implements Collection<T> {
     entryCount=new AtomicLong(0);
   }
 
-  public void close() throws Exception {
+  public void close() {
     for (Queue<T> queues : priorityStructure) {
       queues.clear();
-      if (queues instanceof AutoCloseable) {
-        ((AutoCloseable) queues).close();
+      if (queues instanceof NaturalOrderedCollection) {
+        ((NaturalOrderedCollection) queues).close();
       }
     }
     entryCount.set(0);
   }
-
 
   public Queue<T> flatten (Queue<T> flattenQueue){
     for (Queue<T> queue : priorityStructure) {

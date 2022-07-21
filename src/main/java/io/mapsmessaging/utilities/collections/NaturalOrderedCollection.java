@@ -61,7 +61,10 @@ public class NaturalOrderedCollection implements Collection<Long> {
     return uniqueId;
   }
 
-  public void close()  {
+  public void close() {
+    for (OffsetBitSet offsetBitSet : tree.values()) {
+      factory.close(offsetBitSet);
+    }
     tree.clear();
   }
 
@@ -162,7 +165,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
         boolean result = active.clear(value);
         if (result && active.isEmpty()) {
           tree.remove(active.getStart());
-          factory.close(active);
+          factory.release(active);
         }
         return result;
       }
@@ -222,7 +225,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
           copy.getBitSet().andNot(toRemove.getBitSet());
           if(copy.isEmpty()){
             tree.remove(copy.getStart());
-            factory.close(copy);
+            factory.release(copy);
           }
         }
       }

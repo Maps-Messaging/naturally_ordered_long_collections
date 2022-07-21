@@ -67,7 +67,7 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
       return val;
     }
     tree.remove(current.getStart());
-    factory.close(current);
+    factory.release(current);
     return poll();
   }
 

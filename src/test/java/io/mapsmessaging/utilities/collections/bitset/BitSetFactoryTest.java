@@ -42,7 +42,7 @@ public abstract class BitSetFactoryTest {
       Assertions.assertTrue(bitSetFactory.getUniqueIds().isEmpty());
       Assertions.assertDoesNotThrow( () ->{
         OffsetBitSet off = bitSetFactory.open(1, 0);
-        bitSetFactory.close(off);
+        bitSetFactory.release(off);
       });
     }
   }

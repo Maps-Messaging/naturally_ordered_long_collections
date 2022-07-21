@@ -44,7 +44,7 @@ abstract class PriorityBitSetQueueTest  {
 
   @Test
   @DisplayName("Test multiple add/remove of the same value")
-  void testMultipleInsertionDeletion() throws Exception {
+  void testMultipleInsertionDeletion() {
     for(int[] values:insertionTests) {
       insertionValidationDuplicates(values[0], values[1], 5);
     }
@@ -52,7 +52,7 @@ abstract class PriorityBitSetQueueTest  {
 
   @Test
   @DisplayName("Test simple insertions")
-  void testSimpleInsertion() throws Exception {
+  void testSimpleInsertion(){
     for(int[] values:insertionTests) {
       insertionValidation(values[0], values[1]);
     }
@@ -60,7 +60,7 @@ abstract class PriorityBitSetQueueTest  {
 
   @Test
   @DisplayName("Test simple insertions and walk the structure")
-  void testSimpleInsertionAndWalk() throws Exception {
+  void testSimpleInsertionAndWalk() {
     for(int[] values:insertionTests) {
       insertionAndWalkValidation(values[0], values[1]);
     }
@@ -68,7 +68,7 @@ abstract class PriorityBitSetQueueTest  {
 
   @Test
   @DisplayName("Test simple insertions and remove the entries")
-  void testSimpleInsertionAndDrain() throws Exception {
+  void testSimpleInsertionAndDrain() {
     for(int[] values:insertionTests) {
       insertionAndDrainValidation(values[0], values[1]);
     }
@@ -76,7 +76,7 @@ abstract class PriorityBitSetQueueTest  {
 
   @Test
   @DisplayName("Test simple insertions, remove a priority level")
-  void testLimitedInsertionAndDrain() throws Exception {
+  void testLimitedInsertionAndDrain() {
     for(int[] values:insertionTests) {
       limitedInsertionAndDrain(values[0], values[1]);
     }
@@ -84,272 +84,270 @@ abstract class PriorityBitSetQueueTest  {
 
   @Test
   @DisplayName("Test simple insertions")
-  void testSimpleInsertionExternal() throws Exception {
+  void testSimpleInsertionExternal() {
     for(int[] values:insertionTests) {
       insertionValidation(values[0], values[1]);
     }
   }
 
   @Test
-  void testSimpleInsertionAndWalkExternal() throws Exception {
+  void testSimpleInsertionAndWalkExternal() {
     for(int[] values:insertionTests) {
       insertionAndWalkValidation(values[0], values[1]);
     }
   }
 
   @Test
-  void testSimpleInsertionAndDrainExternal() throws Exception {
+  void testSimpleInsertionAndDrainExternal() {
     for(int[] values:insertionTests) {
       insertionAndDrainValidation(values[0], values[1]);
     }
   }
 
   @Test
-  void testLimitedInsertionAndDrainExternal() throws Exception {
+  void testLimitedInsertionAndDrainExternal() {
     for(int[] values:insertionTests) {
       limitedInsertionAndDrain(values[0], values[1]);
     }
   }
 
   @Test
-  void testRandomEntries() throws Exception {
-    try(PriorityQueue<Long> priorityQueue = createQueue(16)) {
-      List<ArrayList<Long>>  comparison = new ArrayList<>();
-      for(int x=0;x<16;x++){
-        comparison.add(new ArrayList<>());
-      }
-      Random rdm = new Random();
-      long endTime = System.currentTimeMillis()+ RUN_TIME;
-      int count = 0;
-
-      while(endTime > System.currentTimeMillis() && count < 1000000){
-        long value = Math.abs(rdm.nextLong()%100000000L);
-        int priority = Math.abs(rdm.nextInt(16));
-        ArrayList<Long> pq = comparison.get(priority);
-        if(!pq.contains(value)){
-          priorityQueue.add(value, priority);
-          pq.add(value);
-          count++;
-        }
-      }
-      System.err.println("Added "+priorityQueue.size()+" in "+(RUN_TIME/1000)+"seconds");
-      for(int x=0;x<16;x++){
-        comparison.get(x).sort(Long::compare);
-        Assertions.assertEquals(priorityQueue.priorityStructure.get(x).size(), comparison.get(x).size());
-      }
-
-      long testSize = 0;
-      for(int x=15;x>=0;x--){
-        testSize += comparison.get(x).size();
-      }
-      Assertions.assertEquals(priorityQueue.size(), count);
-      Assertions.assertEquals(testSize, count);
-      Iterator<Long> priorityIterator = priorityQueue.iterator();
-      Iterator<Long> stagedIterator = comparison.remove(comparison.size()-1).iterator();
-      while(priorityIterator.hasNext()){
-        if(!stagedIterator.hasNext()){
-          if(comparison.isEmpty()){
-            Assertions.fail("We still have entries");
-          }
-          stagedIterator = comparison.remove(comparison.size()-1).iterator();
-        }
-        long test1 = priorityIterator.next();
-        long test2 = stagedIterator.next();
-        Assertions.assertEquals(test1, test2);
-      }
+  void testRandomEntries() {
+    PriorityQueue<Long> priorityQueue = createQueue(16);
+    List<ArrayList<Long>> comparison = new ArrayList<>();
+    for (int x = 0; x < 16; x++) {
+      comparison.add(new ArrayList<>());
     }
-  }
+    Random rdm = new Random();
+    long endTime = System.currentTimeMillis() + RUN_TIME;
+    int count = 0;
 
-  @Test
-  void testLinearEntries() throws Exception{
-    try ( PriorityQueue<Long> priorityQueue = createQueue(16)){
-      List<ArrayList<Long>>  comparison = new ArrayList<>();
-      for(int x=0;x<16;x++){
-        comparison.add(new ArrayList<>());
-      }
-      long endTime = System.currentTimeMillis()+ RUN_TIME;
-      long count = 0;
-
-      while(endTime > System.currentTimeMillis() && count < 1000000000L){
-        long value = count;
-        int priority = ((int)count % 16);
-        ArrayList<Long> pq = comparison.get(priority);
+    while (endTime > System.currentTimeMillis() && count < 1000000) {
+      long value = Math.abs(rdm.nextLong() % 100000000L);
+      int priority = Math.abs(rdm.nextInt(16));
+      ArrayList<Long> pq = comparison.get(priority);
+      if (!pq.contains(value)) {
         priorityQueue.add(value, priority);
         pq.add(value);
         count++;
       }
-      System.err.println("Added "+priorityQueue.size()+" in"+(RUN_TIME/1000)+"seconds");
-      for(int x=0;x<16;x++){
-        Assertions.assertEquals(priorityQueue.priorityStructure.get(x).size(), comparison.get(x).size());
-      }
+    }
+    System.err.println("Added " + priorityQueue.size() + " in " + (RUN_TIME / 1000) + "seconds");
+    for (int x = 0; x < 16; x++) {
+      comparison.get(x).sort(Long::compare);
+      Assertions.assertEquals(priorityQueue.priorityStructure.get(x).size(), comparison.get(x).size());
+    }
 
-      long testSize = 0;
-      for(int x=15;x>=0;x--){
-        testSize += comparison.get(x).size();
-      }
-      Assertions.assertEquals(priorityQueue.size(), count);
-      Assertions.assertEquals(testSize, count);
-      Iterator<Long> priorityIterator = priorityQueue.iterator();
-      Iterator<Long> stagedIterator = comparison.remove(comparison.size()-1).iterator();
-      while(priorityIterator.hasNext()){
-        if(!stagedIterator.hasNext()){
-          if(comparison.isEmpty()){
-            Assertions.fail("We still have entries");
-          }
-          stagedIterator = comparison.remove(comparison.size()-1).iterator();
+    long testSize = 0;
+    for (int x = 15; x >= 0; x--) {
+      testSize += comparison.get(x).size();
+    }
+    Assertions.assertEquals(priorityQueue.size(), count);
+    Assertions.assertEquals(testSize, count);
+    Iterator<Long> priorityIterator = priorityQueue.iterator();
+    Iterator<Long> stagedIterator = comparison.remove(comparison.size() - 1).iterator();
+    while (priorityIterator.hasNext()) {
+      if (!stagedIterator.hasNext()) {
+        if (comparison.isEmpty()) {
+          Assertions.fail("We still have entries");
         }
-        long test1 = priorityIterator.next();
-        long test2 = stagedIterator.next();
-        Assertions.assertEquals(test1, test2);
+        stagedIterator = comparison.remove(comparison.size() - 1).iterator();
       }
+      long test1 = priorityIterator.next();
+      long test2 = stagedIterator.next();
+      Assertions.assertEquals(test1, test2);
     }
   }
 
-  private void limitedInsertionAndDrain(int entries, int priorities) throws Exception {
-    try (PriorityQueue<Long> priorityQueue = createAndInsert(entries, priorities)) {
-      for (int x = 0; x < priorities; x++) {
-        Queue<Long> list = priorityQueue.priorityStructure.get(x);
-        Assertions.assertEquals(entries / priorities, list.size());
-        Long uniqueIdStart = list.peek();
-        for (Long testData : list) {
-          Assertions.assertEquals(uniqueIdStart, testData);
-          uniqueIdStart += priorities;
+  @Test
+  void testLinearEntries() {
+    PriorityQueue<Long> priorityQueue = createQueue(16);
+    List<ArrayList<Long>> comparison = new ArrayList<>();
+    for (int x = 0; x < 16; x++) {
+      comparison.add(new ArrayList<>());
+    }
+    long endTime = System.currentTimeMillis() + RUN_TIME;
+    long count = 0;
+
+    while (endTime > System.currentTimeMillis() && count < 1000000000L) {
+      long value = count;
+      int priority = ((int) count % 16);
+      ArrayList<Long> pq = comparison.get(priority);
+      priorityQueue.add(value, priority);
+      pq.add(value);
+      count++;
+    }
+    System.err.println("Added " + priorityQueue.size() + " in" + (RUN_TIME / 1000) + "seconds");
+    for (int x = 0; x < 16; x++) {
+      Assertions.assertEquals(priorityQueue.priorityStructure.get(x).size(), comparison.get(x).size());
+    }
+
+    long testSize = 0;
+    for (int x = 15; x >= 0; x--) {
+      testSize += comparison.get(x).size();
+    }
+    Assertions.assertEquals(priorityQueue.size(), count);
+    Assertions.assertEquals(testSize, count);
+    Iterator<Long> priorityIterator = priorityQueue.iterator();
+    Iterator<Long> stagedIterator = comparison.remove(comparison.size() - 1).iterator();
+    while (priorityIterator.hasNext()) {
+      if (!stagedIterator.hasNext()) {
+        if (comparison.isEmpty()) {
+          Assertions.fail("We still have entries");
         }
+        stagedIterator = comparison.remove(comparison.size() - 1).iterator();
       }
+      long test1 = priorityIterator.next();
+      long test2 = stagedIterator.next();
+      Assertions.assertEquals(test1, test2);
+    }
+  }
 
-      //
-      // Remove a complete priority set
-      //
-      int removed = priorities / 2;
-      Long[] queue = new Long[priorityQueue.priorityStructure.get(removed).size()];
-      queue = priorityQueue.priorityStructure.get(removed).toArray(queue);
-      for(Long l:queue){
-        priorityQueue.remove(l);
+  private void limitedInsertionAndDrain(int entries, int priorities) {
+    PriorityQueue<Long> priorityQueue = createAndInsert(entries, priorities);
+    for (int x = 0; x < priorities; x++) {
+      Queue<Long> list = priorityQueue.priorityStructure.get(x);
+      Assertions.assertEquals(entries / priorities, list.size());
+      Long uniqueIdStart = list.peek();
+      for (Long testData : list) {
+        Assertions.assertEquals(uniqueIdStart, testData);
+        uniqueIdStart += priorities;
       }
-      int size = entries - (entries / priorities);
-      Assertions.assertEquals(size, priorityQueue.size());
+    }
 
-      //
-      // The structure of the queue seems fine, so now lets destructively read it, we should walk backwards from the priority
-      // Need to calculate the first priority level we should expect and the unique ID we should expect.
-      //
+    //
+    // Remove a complete priority set
+    //
+    int removed = priorities / 2;
+    Long[] queue = new Long[priorityQueue.priorityStructure.get(removed).size()];
+    queue = priorityQueue.priorityStructure.get(removed).toArray(queue);
+    for (Long l : queue) {
+      priorityQueue.remove(l);
+    }
+    int size = entries - (entries / priorities);
+    Assertions.assertEquals(size, priorityQueue.size());
 
-      int priorityStart = priorities - 1;
-      if (priorityStart == removed) {
+    //
+    // The structure of the queue seems fine, so now lets destructively read it, we should walk backwards from the priority
+    // Need to calculate the first priority level we should expect and the unique ID we should expect.
+    //
+
+    int priorityStart = priorities - 1;
+    if (priorityStart == removed) {
+      priorityStart--;
+    }
+    int uniqueIdStart = priorityStart;
+    int counter = 0;
+    int overallCounter = 0;
+    while (!priorityQueue.isEmpty()) {
+      Long testData = priorityQueue.poll();
+      Assertions.assertNotNull(testData);
+      Assertions.assertEquals(testData, uniqueIdStart);
+      overallCounter++;
+      counter++;
+      uniqueIdStart += priorities;
+      if (counter == entries / priorities) {
+        counter = 0;
         priorityStart--;
-      }
-      int uniqueIdStart = priorityStart;
-      int counter = 0;
-      int overallCounter = 0;
-      while (!priorityQueue.isEmpty()) {
-        Long testData = priorityQueue.poll();
-        Assertions.assertNotNull(testData);
-        Assertions.assertEquals(testData, uniqueIdStart);
-        overallCounter++;
-        counter++;
-        uniqueIdStart += priorities;
-        if (counter == entries / priorities) {
-          counter = 0;
+        if (priorityStart == removed) {
           priorityStart--;
-          if (priorityStart == removed) {
-            priorityStart--;
-          }
-
-          uniqueIdStart = priorityStart;
         }
-      }
 
-      Assertions.assertEquals(size, overallCounter);
-      Assertions.assertEquals(0, priorityQueue.size());
+        uniqueIdStart = priorityStart;
+      }
+    }
+
+    Assertions.assertEquals(size, overallCounter);
+    Assertions.assertEquals(0, priorityQueue.size());
+    try {
+      priorityQueue.close();
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 
-  private void insertionAndDrainValidation(int entries, int priorities) throws Exception {
-    try (PriorityQueue<Long> priorityQueue = createAndInsert(entries, priorities)) {
-      for (int x = 0; x < priorities; x++) {
-        Queue<Long> list = priorityQueue.priorityStructure.get(x);
-        Assertions.assertEquals(entries / priorities, list.size());
-        Long uniqueIdStart = list.peek();
-        for (Long testData : list) {
-          Assertions.assertEquals(uniqueIdStart, testData);
-          uniqueIdStart += priorities;
-        }
-      }
-      //
-      // The structure of the queue seems fine, so now lets destructively read it, we should walk backwards from the priority
-      // Need to calculate the first priority level we should expect and the unique ID we should expect.
-      //
-
-      int priorityStart = priorities - 1;
-      int uniqueIdStart = priorityStart;
-      int counter = 0;
-      int overallCounter = 0;
-      while (!priorityQueue.isEmpty()) {
-        Long testData = priorityQueue.poll();
-        Assertions.assertNotNull(testData);
-        Assertions.assertEquals(testData, uniqueIdStart);
-        overallCounter++;
-        counter++;
+  private void insertionAndDrainValidation(int entries, int priorities) {
+    PriorityQueue<Long> priorityQueue = createAndInsert(entries, priorities);
+    for (int x = 0; x < priorities; x++) {
+      Queue<Long> list = priorityQueue.priorityStructure.get(x);
+      Assertions.assertEquals(entries / priorities, list.size());
+      Long uniqueIdStart = list.peek();
+      for (Long testData : list) {
+        Assertions.assertEquals(uniqueIdStart, testData);
         uniqueIdStart += priorities;
-        if (counter == entries / priorities) {
-          counter = 0;
-          priorityStart--;
-          uniqueIdStart = priorityStart;
-        }
       }
+    }
+    //
+    // The structure of the queue seems fine, so now lets destructively read it, we should walk backwards from the priority
+    // Need to calculate the first priority level we should expect and the unique ID we should expect.
+    //
 
-      Assertions.assertEquals(entries, overallCounter);
-      Assertions.assertEquals(0, priorityQueue.size());
+    int priorityStart = priorities - 1;
+    int uniqueIdStart = priorityStart;
+    int counter = 0;
+    int overallCounter = 0;
+    while (!priorityQueue.isEmpty()) {
+      Long testData = priorityQueue.poll();
+      Assertions.assertNotNull(testData);
+      Assertions.assertEquals(testData, uniqueIdStart);
+      overallCounter++;
+      counter++;
+      uniqueIdStart += priorities;
+      if (counter == entries / priorities) {
+        counter = 0;
+        priorityStart--;
+        uniqueIdStart = priorityStart;
+      }
+    }
+
+    Assertions.assertEquals(entries, overallCounter);
+    Assertions.assertEquals(0, priorityQueue.size());
+  }
+
+  private void insertionAndWalkValidation(int entries, int priorities) {
+    PriorityQueue<Long> priorityQueue = createAndInsert(entries, priorities);
+    for (int x = 0; x < priorities; x++) {
+      Queue<Long> list = priorityQueue.priorityStructure.get(x);
+      Assertions.assertEquals(entries / priorities, list.size());
+      long uniqueIdStart = list.peek();
+      for (Long testData : list) {
+        Assertions.assertEquals(uniqueIdStart, testData);
+        uniqueIdStart += priorities;
+      }
     }
   }
 
-  private void insertionAndWalkValidation(int entries, int priorities) throws Exception {
-    try (PriorityQueue<Long> priorityQueue = createAndInsert(entries, priorities)) {
-      for (int x = 0; x < priorities; x++) {
-        Queue<Long> list = priorityQueue.priorityStructure.get(x);
-        Assertions.assertEquals(entries / priorities, list.size());
-        long uniqueIdStart = list.peek();
-        for (Long testData : list) {
-          Assertions.assertEquals(uniqueIdStart, testData);
-          uniqueIdStart += priorities;
-        }
-      }
+
+  private void insertionValidation(int entries, int priorities) {
+    PriorityQueue<Long> priorityQueue = createAndInsert(entries, priorities);
+    for (int x = 0; x < priorities; x++) {
+      Queue<Long> list = priorityQueue.priorityStructure.get(x);
+      Assertions.assertEquals(entries / priorities, list.size());
     }
   }
 
-  private void insertionValidation(int entries, int priorities) throws Exception {
-    try (PriorityQueue<Long> priorityQueue = createAndInsert(entries, priorities)) {
-      for (int x = 0; x < priorities; x++) {
-        Queue<Long> list = priorityQueue.priorityStructure.get(x);
-        Assertions.assertEquals(entries / priorities, list.size());
+  private void insertionValidationDuplicates(int entries, int priorities, int duplicates) {
+    PriorityQueue<Long> priorityQueue = createAndInsert(entries, priorities);
+    for (int x = 0; x < priorities; x++) {
+      Queue<Long> list = priorityQueue.priorityStructure.get(x);
+      Assertions.assertEquals(entries / priorities, list.size());
+    }
+    int size = priorityQueue.size();
+    for (long x = 0; x < entries; x++) {
+      for (int y = 0; y < duplicates; y++) {
+        priorityQueue.add(x, (int) x % priorities);
       }
     }
-  }
+    Assertions.assertEquals(size, priorityQueue.size());
 
-  private void insertionValidationDuplicates(int entries, int priorities, int duplicates)
-      throws Exception {
-    try (PriorityQueue<Long> priorityQueue = createAndInsert(entries, priorities)) {
-      for (int x = 0; x < priorities; x++) {
-        Queue<Long> list = priorityQueue.priorityStructure.get(x);
-        Assertions.assertEquals(entries / priorities, list.size());
+    for (long x = 0; x < entries; x++) {
+      size = priorityQueue.size();
+      for (int y = 0; y < duplicates; y++) {
+        priorityQueue.remove(x);
       }
-      int size = priorityQueue.size();
-      for (long x = 0; x < entries; x++) {
-        for (int y = 0; y < duplicates; y++) {
-          priorityQueue.add(x, (int) x % priorities);
-        }
-      }
-      Assertions.assertEquals(size, priorityQueue.size());
-
-      for (long x = 0; x < entries; x++) {
-        size = priorityQueue.size();
-        for (int y = 0; y < duplicates; y++) {
-          priorityQueue.remove(x);
-        }
-        Assertions.assertEquals(size-1, priorityQueue.size());
-      }
-      Assertions.assertEquals(0, priorityQueue.size());
+      Assertions.assertEquals(size - 1, priorityQueue.size());
     }
+    Assertions.assertEquals(0, priorityQueue.size());
   }
 
   private PriorityQueue<Long> createAndInsert(int entries, int priorities){

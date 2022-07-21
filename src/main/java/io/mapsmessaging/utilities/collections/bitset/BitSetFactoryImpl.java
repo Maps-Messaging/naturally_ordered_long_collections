@@ -44,6 +44,11 @@ public class BitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public void close(OffsetBitSet bitset) {
+
+  }
+
+  @Override
+  public void release(OffsetBitSet bitset) {
     bitset.clearAll();
   }
 }
