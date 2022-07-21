@@ -66,6 +66,7 @@ class FilePriorityBitSetQueueTest extends PriorityBitSetQueueTest {
       long t = x;
       priorityList.add(t, x%16);
     }
+    priorityList.close();
     localFactory.close();
 
     localFactory = new FileBitSetFactoryImpl(file.getName(),4096);
