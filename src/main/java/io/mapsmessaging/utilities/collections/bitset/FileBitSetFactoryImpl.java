@@ -69,7 +69,13 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
       var startId = raf.readLong();
       pos += HEADER_SIZE;
       ByteBufferBackedBitMap bitmap = map(pos, uniqueId);
-      free.add(new FileOffsetBitSet(bitmap, pos - HEADER_SIZE, startId, this));
+      FileOffsetBitSet bitSet = new FileOffsetBitSet(bitmap, pos - HEADER_SIZE, startId, this);
+      if(uniqueId == -1) {
+        free.add(bitSet);
+      }
+      else{
+        used.add(bitSet);
+      }
       pos += bufferSize;
     }
   }
