@@ -18,6 +18,7 @@
 
 package io.mapsmessaging.utilities.collections;
 
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.FileBitSetFactoryImpl;
 import java.io.File;
 import java.io.IOException;
@@ -55,25 +56,51 @@ class FilePriorityBitSetQueueTest extends PriorityBitSetQueueTest {
   }
 
   @Test
-  void testFileReload() throws Exception {
-    File file = new File("test_file_bitset.queue_reload");
+  void testServerIssue() throws Exception {
+    File file = new File("testServerIssue");
     if(file.exists()){
       file.delete();
     }
     FileBitSetFactoryImpl localFactory = new FileBitSetFactoryImpl(file.getName(),4096);
     PriorityQueue<Long> priorityList = createQueue(16, localFactory);
-    for(int x=0;x<2048;x++){
+    for(int x=0;x<1_000_000;x++){
+      long t = x;
+      priorityList.add(t, 4);
+    }
+
+
+    Queue<Long> justAList =new NaturalOrderedLongQueue(0, new BitSetFactoryImpl(8192));
+    priorityList.flatten(justAList);
+    Assertions.assertEquals(1_000_000, justAList.size());
+
+    priorityList.close();
+    localFactory.close();
+    if(file.exists()){
+      Assertions.assertTrue(file.delete());
+    }
+  }
+
+
+  @Test
+  void testFileReload() throws Exception {
+    File file = new File("test_file_bitset.queue_reload");
+    if(file.exists()){
+      file.delete();
+    }
+    FileBitSetFactoryImpl localFactory = new FileBitSetFactoryImpl(file.getName(),8192);
+    PriorityQueue<Long> priorityList = createQueue(16, localFactory);
+    for(int x=0;x<1_000;x++){
       long t = x;
       priorityList.add(t, x%16);
     }
     priorityList.close();
     localFactory.close();
 
-    localFactory = new FileBitSetFactoryImpl(file.getName(),4096);
+    localFactory = new FileBitSetFactoryImpl(file.getName(),8192);
     priorityList = createQueue(16, localFactory);
 
     for(int y = 15;y>=0;y--) {
-      for (int x = 0; x < 2048 / 16; x++) {
+      for (int x = 0; x < 1_000 / 16; x++) {
         Long val = priorityList.poll();
         if(val != null){
           Assertions.assertEquals( (y+(x*16)), val);
@@ -86,7 +113,6 @@ class FilePriorityBitSetQueueTest extends PriorityBitSetQueueTest {
       Assertions.assertTrue(file.delete());
     }
   }
-
 
   public PriorityQueue<Long> createQueue(int priorities){
     return createQueue(priorities, factory);

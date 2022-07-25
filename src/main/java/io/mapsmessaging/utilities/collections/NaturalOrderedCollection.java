@@ -190,7 +190,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public boolean addAll(@NonNull @NotNull Collection<? extends Long> c) {
-    if(c instanceof NaturalOrderedCollection){
+    if (isMatching(c)) {
       NaturalOrderedCollection rhs = (NaturalOrderedCollection)c;
       Collection<OffsetBitSet> bitsets = rhs.tree.values();
       for(OffsetBitSet toAddBitset:bitsets){
@@ -216,7 +216,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public boolean removeAll(@NonNull @NotNull Collection<?> c) {
-    if (c instanceof NaturalOrderedCollection) {
+    if (isMatching(c)) {
       NaturalOrderedCollection rhs = (NaturalOrderedCollection) c;
       Collection<OffsetBitSet> bitsets = rhs.tree.values();
       for (OffsetBitSet toRemove : bitsets) {
@@ -275,6 +275,9 @@ public class NaturalOrderedCollection implements Collection<Long> {
     return "size = " + size();
   }
 
+  protected boolean isMatching(Collection<?> c){
+    return (c instanceof NaturalOrderedCollection && ((NaturalOrderedCollection)c).factory.getSize() == factory.getSize());
+  }
 
   // </editor-fold>
   static class OffsetBitSetComparator implements Comparator<Long> {
