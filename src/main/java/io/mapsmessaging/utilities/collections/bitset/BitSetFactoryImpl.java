@@ -33,6 +33,11 @@ public class BitSetFactoryImpl extends BitSetFactory {
   }
 
   @Override
+  public void close(OffsetBitSet bitset) {
+    // Nothing required to clean up any resources
+  }
+
+  @Override
   public List<OffsetBitSet> get(long uniqueId) {
     return new ArrayList<>();
   }
@@ -40,11 +45,6 @@ public class BitSetFactoryImpl extends BitSetFactory {
   @Override
   public List<Long> getUniqueIds() {
     return new ArrayList<>();
-  }
-
-  @Override
-  public void close(OffsetBitSet bitset) {
-
   }
 
   @Override

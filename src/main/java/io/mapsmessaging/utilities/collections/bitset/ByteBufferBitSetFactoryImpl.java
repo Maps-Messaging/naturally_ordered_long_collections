@@ -43,6 +43,7 @@ public class ByteBufferBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public void close(@NonNull @NotNull OffsetBitSet bitset) {
+    // nothing to do
   }
 
   @Override
