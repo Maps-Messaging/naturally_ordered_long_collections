@@ -52,7 +52,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     used = new ArrayList<>();
     var testFile = new File(filename);
     var parent = testFile.getParentFile();
-    if (parent != null) {
+    if (parent != null&& !parent.exists()) {
       Files.createDirectories(testFile.getParentFile().toPath());
     }
 
