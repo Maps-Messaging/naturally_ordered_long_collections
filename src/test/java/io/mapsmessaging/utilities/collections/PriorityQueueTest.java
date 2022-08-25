@@ -93,6 +93,24 @@ public abstract class PriorityQueueTest  {
   }
 
   @Test
+  public void checkLast(){
+    PriorityQueue<TestData> priorityQueue = createQueue( 16);
+    for(int x=0;x<100;x++){
+      priorityQueue.add(new TestData(x, 8));
+    }
+    priorityQueue.add(new TestData(101, 0));
+
+    // Normal queue get should return 0, but last should return 101 since it is the lowest
+
+    Assertions.assertEquals(101,priorityQueue.last().uniqueId);
+    int x=0;
+    while(!priorityQueue.isEmpty()){
+      Assertions.assertEquals(x, priorityQueue.last().uniqueId);
+      x++;
+    }
+  }
+
+  @Test
   public void alternativeMethods(){
     for(int[] values:insertionTests) {
       alternateDrainMethods(values[0], values[1]);

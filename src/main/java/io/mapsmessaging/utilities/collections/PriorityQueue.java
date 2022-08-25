@@ -87,4 +87,15 @@ public class PriorityQueue<T> extends PriorityCollection<T> implements Queue<T> 
     }
     return null;
   }
+
+  // Returns the lowest priority object first. Useful to clean up the queue
+  public T last(){
+    for(Queue<T> priority:priorityStructure){
+      if(!priority.isEmpty()){
+        entryCount.decrementAndGet();
+        return priority.poll();
+      }
+    }
+    return null;
+  }
 }
