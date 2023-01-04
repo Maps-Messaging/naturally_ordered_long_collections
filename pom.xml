@@ -9,7 +9,7 @@
   <version>1.1.4</version>
   <packaging>jar</packaging>
 
-  <name>Maps Messaging - Naturally Ordered Long Collections</name>
+  <name>Naturally Ordered Long Collections</name>
   <description>A collection that is naturally ordered via long backed by bitsets and bit logic</description>
   <url>http://www.mapsmessaging.io</url>
 
