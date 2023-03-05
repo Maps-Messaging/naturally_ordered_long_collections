@@ -252,13 +252,33 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public boolean retainAll(@NonNull @NotNull Collection<?> c) {
-    Iterator<Long> itr = this.iterator();
     var changed = false;
-    while(itr.hasNext()){
-      long val = itr.next();
-      if(!c.contains(val)){
-        itr.remove();
-        changed = true;
+    if (isMatching(c)) {
+      NaturalOrderedCollection rhs = (NaturalOrderedCollection) c;
+      Collection<OffsetBitSet> bitsets = rhs.tree.values();
+      for (OffsetBitSet toRetain : bitsets) {
+        OffsetBitSet copy = tree.get(toRetain.getStart());
+        if (copy != null) {
+          int original = copy.cardinality();
+          copy.getBitSet().and(toRetain.getBitSet());
+          if(copy.isEmpty()){
+            tree.remove(copy.getStart());
+            factory.release(copy);
+          }
+          else{
+            changed = original != copy.cardinality() || changed;
+          }
+        }
+      }
+    }
+    else {
+      Iterator<Long> itr = this.iterator();
+      while (itr.hasNext()) {
+        long val = itr.next();
+        if (!c.contains(val)) {
+          itr.remove();
+          changed = true;
+        }
       }
     }
     return changed;

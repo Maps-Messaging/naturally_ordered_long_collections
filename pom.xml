@@ -6,12 +6,25 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.mapsmessaging</groupId>
   <artifactId>Naturally_Ordered_Long_Collections</artifactId>
-  <version>1.1.4</version>
+  <version>1.1.5</version>
   <packaging>jar</packaging>
 
   <name>Naturally Ordered Long Collections</name>
   <description>A collection that is naturally ordered via long backed by bitsets and bit logic</description>
   <url>http://www.mapsmessaging.io</url>
+
+  <developers>
+    <developer>
+      <id>mbuckton</id>
+      <name>Matthew Buckton</name>
+      <organization>Maps Messaging</organization>
+      <organizationUrl>http://mapsmessaging.io/</organizationUrl>
+      <roles>
+        <role>founder</role>
+      </roles>
+      <timezone>Australia/Sydney</timezone>
+    </developer>
+  </developers>
 
   <licenses>
     <license>
@@ -34,6 +47,7 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <gpg.keyname>matthew.buckton@mapsmessaging.io</gpg.keyname>
 
     <runSuite>**/*Suite.class</runSuite>
     <!-- Below property indicates the pattern of the test suite -->
@@ -58,8 +72,49 @@
     </sonar.test.exclusions>
   </properties>
 
+  <distributionManagement>
+    <snapshotRepository>
+      <id>mapsmessaging.io</id>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>mapsmessaging.io</id>
+      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>3.0.1</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+            <configuration>
+              <keyname>${gpg.keyname}</keyname>
+              <passphraseServerId>${gpg.keyname}</passphraseServerId>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.8</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>mapsmessaging.io</serverId>
+          <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+        </configuration>
+      </plugin>
+
       <!-- Allow JDKs greater than 1.8 to be used by maven -->
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -126,7 +181,6 @@
         <executions>
           <execution>
             <id>attach-sources</id>
-            <phase>verify</phase>
             <goals>
               <goal>jar-no-fork</goal>
             </goals>
