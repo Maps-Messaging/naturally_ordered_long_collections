@@ -1,28 +1,18 @@
-# naturally_ordered_long_collections
+# Naturally Ordered Long Collections
 Implements java collections over a sparse bitset enabling naturally ordered collections and priority collections, lists and queues.
-
-
 
 
 # pom.xml setup
 
-Add the repository configuration into the pom.xml
-``` xml
-    <!-- MapsMessaging jfrog server --> 
-    <repository>
-      <id>mapsmessaging.io</id>
-      <name>artifactory-releases</name>
-      <url>https://mapsmessaging.jfrog.io/artifactory/mapsmessaging-mvn-prod</url>
-    </repository>
-```    
+All MapsMessaging libraries are hosted on the [maven central server.](https://central.sonatype.com/search?smo=true&q=mapsmessaging)
 
-Then include the dependency
+Include the dependency
 ``` xml
     <!-- Naturally order long collection -->
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Naturally_Ordered_Long_Collections</artifactId>
-      <version>1.1.4</version>
+      <version>1.1.5</version>
     </dependency> 
 ```    
 
