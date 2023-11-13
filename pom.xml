@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.mapsmessaging</groupId>
   <artifactId>naturally_ordered_long_collections</artifactId>
-  <version>1.1.8</version>
+  <version>1.1.9-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Naturally Ordered Long Collections</name>
