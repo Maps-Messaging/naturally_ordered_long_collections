@@ -12,7 +12,7 @@ Include the dependency
     <dependency>
       <groupId>io.mapsmessaging</groupId>
       <artifactId>Naturally_Ordered_Long_Collections</artifactId>
-      <version>1.1.5</version>
+      <version>1.1.8</version>
     </dependency> 
 ```    
 
