@@ -1,4 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~
+  ~  Copyright [ 2020 - 2024 ] Matthew Buckton
+  ~  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+  ~
+  ~  Licensed under the Apache License, Version 2.0 with the Commons Clause
+  ~  (the "License"); you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at:
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~      https://commonsclause.com/
+  ~
+  ~  Unless required by applicable law or agreed to in writing, software
+  ~  distributed under the License is distributed on an "AS IS" BASIS,
+  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
+  ~
+  -->
+
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -15,30 +35,35 @@
 
   <developers>
     <developer>
-      <id>mbuckton</id>
-      <name>Matthew Buckton</name>
-      <organization>Maps Messaging</organization>
-      <organizationUrl>http://mapsmessaging.io/</organizationUrl>
+      <id>mapsmessaging</id>
+      <name>MapsMessaging B.V.</name>
+      <organization>MapsMessaging B.V.</organization>
+      <organizationUrl>https://mapsmessaging.io/</organizationUrl>
       <roles>
-        <role>founder</role>
+        <role>developer</role>
+        <role>maintainer</role>
       </roles>
-      <timezone>Australia/Sydney</timezone>
+      <timezone>Europe/Amsterdam</timezone>
+      <properties>
+        <location>Eindhoven, Netherlands</location>
+      </properties>
     </developer>
   </developers>
 
   <licenses>
     <license>
+      <name>Apache License 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
       <distribution>repo</distribution>
-      <name>Mozilla Public License Version 2.0</name>
-      <url>https://www.mozilla.org/en-US/MPL/2.0/</url>
+      <comments>Restricted by Commons Clause: https://commonsclause.com/</comments>
     </license>
     <license>
-      <distribution>repo</distribution>
-      <name>CommonsClause</name>
+      <name>Commons Clause License Condition v1.0</name>
       <url>https://commonsclause.com/</url>
+      <distribution>repo</distribution>
+      <comments>Applied in conjunction with Apache 2.0 to restrict commercial sale</comments>
     </license>
   </licenses>
-
   <scm>
     <url>https://github.com/Maps-Messaging/naturally_ordered_long_collections.git</url>
   </scm>
@@ -211,6 +236,21 @@
         </executions>
       </plugin>
 
+      <!-- sBOM  generator -->
+      <plugin>
+        <groupId>org.cyclonedx</groupId>
+        <artifactId>cyclonedx-maven-plugin</artifactId>
+        <version>2.9.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>makeAggregateBom</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
       <!-- JavaDoc -->
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -290,11 +330,7 @@
       <artifactId>lombok</artifactId>
       <groupId>org.projectlombok</groupId>
       <version>1.18.36</version>
-    </dependency>
-    <dependency>
-      <artifactId>jsr305</artifactId>
-      <groupId>com.google.code.findbugs</groupId>
-      <version>3.0.2</version>
+      <scope>provided</scope>
     </dependency>
 
   </dependencies>
