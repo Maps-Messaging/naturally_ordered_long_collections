@@ -31,8 +31,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FileBitSetFactoryImpl extends BitSetFactory {
 
@@ -55,7 +56,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     used = new ArrayList<>();
     var testFile = new File(filename);
     var parent = testFile.getParentFile();
-    if (parent != null&& !parent.exists()) {
+    if (parent != null && !parent.exists()) {
       Files.createDirectories(testFile.getParentFile().toPath());
     }
 
@@ -69,10 +70,16 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     while (pos < len) {
       raf.seek(pos);
       var uniqueId = raf.readLong();
-      var startId = raf.readLong();
+      var offset = raf.readLong();
       pos += HEADER_SIZE;
       ByteBufferBackedBitMap bitmap = map(pos, uniqueId);
-      free.add(new FileOffsetBitSet(bitmap, pos - HEADER_SIZE, startId, this));
+      FileOffsetBitSet bitset = new FileOffsetBitSet(bitmap, pos - HEADER_SIZE, offset, this);
+      if(uniqueId != -1){
+        used.add(bitset);
+      }
+      else {
+        free.add(bitset);
+      }
       pos += bufferSize;
     }
   }
@@ -107,51 +114,74 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   }
 
   @Override
-  public OffsetBitSet open(long uniqueId, long id) throws IOException {
+  public OffsetBitSet open(long uniqueId, long offset) throws IOException {
     FileOffsetBitSet response;
-    long startId = getStartIndex(id);
+    offset = getStartIndex(offset);
     if (free.isEmpty()) {
       long end = raf.length();
-      raf.seek(end);
-      raf.writeLong(uniqueId);
-      raf.writeLong(startId);
-      raf.write(emptyBuffer);
+      createRecord(end, uniqueId, offset);
       ByteBufferBackedBitMap bitmap = map(end + HEADER_SIZE, uniqueId);
-      response = new FileOffsetBitSet(bitmap, end, startId, this);
+      response = new FileOffsetBitSet(bitmap, end, offset, this);
     } else {
       response = free.remove(0);
-      raf.seek(response.getPosition());
-      raf.writeLong(uniqueId);
-      raf.writeLong(startId);
-      response.reset(startId, uniqueId);
+      updateRecord(response.getPosition(), uniqueId, offset);
+      response.reset(offset, uniqueId);
     }
     used.add(response);
     return response;
   }
+  
+  private void createRecord(long position, long uniqueId, long offset) throws IOException {
+    raf.seek(position);
+    raf.writeLong(uniqueId);
+    raf.writeLong(offset);
+    raf.write(emptyBuffer);
+  }
+  
+  private void updateRecord(long position, long uniqueId, long offset) throws IOException {
+    raf.seek(position);
+    raf.writeLong(uniqueId);
+    raf.writeLong(offset);
+  }
 
   @Override
   public void close(@NonNull @NotNull OffsetBitSet bitset) {
-    free.add((FileOffsetBitSet) bitset);
-    used.remove(bitset);
+    FileOffsetBitSet fb = (FileOffsetBitSet) bitset;
+    used.remove(fb);
+    fb.reset(0, -1);
+    try {
+      updateRecord(fb.getPosition(), fb.getUniqueId(), fb.getStart());
+    } catch (IOException e) {
+
+    }
+    free.add(fb);
   }
 
   @Override
   public void release(@NonNull @NotNull OffsetBitSet bitset) {
     bitset.reset(0, -1);
+    try {
+      updateRecord(((FileOffsetBitSet) bitset).getPosition(), -1, 0);
+    } catch (IOException e) {
+      // Log this
+    }
     free.add((FileOffsetBitSet) bitset);
-    used.remove(bitset);
+    used.remove((FileOffsetBitSet) bitset);
   }
 
 
   @Override
   public List<OffsetBitSet> get(long uniqueId) {
+    if(uniqueId == -1){
+      return getList(free, uniqueId);
+    }
+    return getList(used, uniqueId);
+  }
+
+  private List<OffsetBitSet> getList(List<FileOffsetBitSet> list, long uniqueId) {
     List<OffsetBitSet> response = new ArrayList<>();
-    Iterator<FileOffsetBitSet> freeList = free.iterator();
-    while (freeList.hasNext()) {
-      FileOffsetBitSet bitset = freeList.next();
+    for (FileOffsetBitSet bitset : list) {
       if (bitset.getUniqueId() == uniqueId) {
-        freeList.remove();
-        used.add(bitset);
         response.add(bitset);
       }
     }
@@ -160,16 +190,14 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public List<Long> getUniqueIds() {
-    List<Long> response = new ArrayList<>();
-    for (FileOffsetBitSet bitset : free) {
-      if (!response.contains(bitset.getUniqueId())) {
-        response.add(bitset.getUniqueId());
-      }
+    Set<Long> ids = new LinkedHashSet<>();
+    for (FileOffsetBitSet bitset : used) {
+      ids.add(bitset.getUniqueId());
     }
-    return response;
+    return new ArrayList<>(ids);
   }
 
-  private ByteBufferBackedBitMap map(long pos, long uniqueId) throws IOException {
+  protected ByteBufferBackedBitMap map(long pos, long uniqueId) throws IOException {
     return new ByteBufferBackedBitMap(raf.getChannel().map(MapMode.READ_WRITE, pos, bufferSize), 0, uniqueId);
   }
 
@@ -177,43 +205,4 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     ByteBuffer backing = mapped.clearBacking();
     MappedBufferHelper.closeDirectBuffer(backing);
   }
-
-  private static class FileOffsetBitSet extends OffsetBitSet implements AutoCloseable {
-
-    private final BitSetFactory factory;
-    private final long position;
-
-    public FileOffsetBitSet(@NonNull @NotNull ByteBufferBackedBitMap bitSet, long position, long offset, @NonNull @NotNull BitSetFactory factory) {
-      super(bitSet, offset);
-      this.factory = factory;
-      this.position = position;
-    }
-
-    public long getPosition() {
-      return position;
-    }
-
-    public long getUniqueId() {
-      return getBitSet().getUniqueId();
-    }
-
-    @Override
-    public void close() {
-      factory.release(this);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (obj instanceof OffsetBitSet) {
-        return compareTo((OffsetBitSet) obj) == 0;
-      }
-      return super.equals(obj);
-    }
-
-    @Override
-    public int hashCode() {
-      return super.hashCode();
-    }
-  }
-
 }

@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.utilities.collections.bitset;
 
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,8 +30,12 @@ import java.util.ListIterator;
 public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   protected BitSet rawBitSet;
+  @Getter
   private long start;
+  @Getter
   private long end;
+
+  private boolean active = true;
 
   public OffsetBitSet(@NonNull @NotNull BitSet bitSet, long offset) {
     rawBitSet = bitSet;
@@ -40,13 +45,21 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   public void releaseBitSet() {
     rawBitSet = null;
+    active = false;
   }
 
   public void clear(){
+    ensureActive();
     rawBitSet.clear();
   }
 
+
+  public void clearAll() {
+    clear();
+  }
+
   public boolean set(long bit) {
+    ensureActive();
     return rawBitSet.set((int) (bit - start));
   }
 
@@ -54,38 +67,46 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
     if (rawBitSet == null) {
       return "cleared - unusable";
     }
-    return "Offset::{Start:" + start + ", End:" + end + "} > " + rawBitSet.toString();
+    return "Offset::{Start:" + start + ", End:" + end + "} > " + rawBitSet;
   }
 
   public boolean clear(long bit) {
+    ensureActive();
     return rawBitSet.clear((int) (bit - start));
   }
 
   public boolean isSet(long bit) {
+    ensureActive();
     return rawBitSet.isSet((int) (bit - start));
   }
 
   public void flip(long bit) {
+    ensureActive();
     rawBitSet.flip((int) (bit - start));
   }
 
   public void flip(long fromIndex, long toIndex) {
+    ensureActive();
     rawBitSet.flip((int) (fromIndex - start), (int) (toIndex - start));
   }
 
   public int length() {
+    ensureActive();
     return rawBitSet.length();
   }
 
   public boolean isEmpty() {
+    ensureActive();
     return rawBitSet.isEmpty();
   }
 
   public int cardinality() {
+    ensureActive();
     return rawBitSet.cardinality();
   }
 
   public long nextSetBit(long fromIndex) {
+    ensureActive();
     int index = (int) (fromIndex - start);
     long response = rawBitSet.nextSetBit(index);
     if (response >= 0) {
@@ -95,6 +116,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   }
 
   public long nextSetBitAndClear(long fromIndex) {
+    ensureActive();
     long response = rawBitSet.nextSetBitAndClear((int) (fromIndex - start));
     if (response >= 0) {
       response += start;
@@ -103,62 +125,67 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   }
 
   public long nextClearBit(long fromIndex) {
+    ensureActive();
     return rawBitSet.nextClearBit((int) (fromIndex - start)) + start;
   }
 
   public long previousSetBit(long fromIndex) {
+    ensureActive();
     return rawBitSet.previousSetBit((int) (fromIndex - start)) + start;
   }
 
   public long previousClearBit(long fromIndex) {
+    ensureActive();
     return rawBitSet.previousClearBit((int) (fromIndex - start)) + start;
   }
 
-  public void clearAll() {
-    rawBitSet.clear();
-  }
-
   public void and(BitSet map) {
-    rawBitSet.and(map);
+    ensureActive();
+   rawBitSet.and(map);
   }
 
   public void xor(BitSet map) {
+    ensureActive();
     rawBitSet.xor(map);
   }
 
   public void or(BitSet map) {
+    ensureActive();
     rawBitSet.or(map);
   }
 
   public void andNot(BitSet map) {
+    ensureActive();
     rawBitSet.andNot(map);
   }
 
   public @NonNull @NotNull BitSet getBitSet() {
+    if(rawBitSet == null) {
+      System.err.println("Hmm");
+    }
     return rawBitSet;
   }
 
-  public long getStart() {
-    return start;
-  }
-
   public void reset(long start, long uniqueId) {
+    ensureActive();
     this.start = start;
     end = start + rawBitSet.length();
     rawBitSet.clear();
     rawBitSet.setUniqueId(uniqueId);
   }
 
-  public long getEnd() {
-    return end;
+  private void ensureActive() {
+    if (!active) throw new IllegalStateException("BitSet has been released");
   }
 
   public Iterator<Long> iterator() {
+    ensureActive();
     return new OffsetBitSetIterator();
   }
 
   public ListIterator<Long> listIterator() {
-    return new OffsetBitSetListIterator();
+    ensureActive();
+   return new OffsetBitSetListIterator();
   }
 
   @Override

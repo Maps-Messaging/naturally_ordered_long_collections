@@ -353,10 +353,11 @@ abstract class PriorityBitSetQueueTest  {
     PriorityQueue<Long> priorityQueue = createQueue(priorities);
     try {
       Assertions.assertEquals(priorityQueue.priorityStructure.size(), priorities);
+      priorityQueue.clear();
       for(long x=0;x<entries;x++){
         priorityQueue.add(x,(int)x%priorities);
       }
-      Assertions.assertEquals(priorityQueue.size(), entries);
+      Assertions.assertEquals(entries, priorityQueue.size());
       return priorityQueue;
     } catch (Throwable e) {
       try {

@@ -43,8 +43,9 @@ public class FileBitSetFactoryTest extends BitSetFactoryTest{
       long id = System.currentTimeMillis();
       OffsetBitSet bitSet = bitSetFactory.open(id, 1);
       bitSetFactory.release(bitSet);
-      Assertions.assertFalse(bitSetFactory.getUniqueIds().isEmpty());
+      Assertions.assertTrue(bitSetFactory.getUniqueIds().isEmpty());
       Assertions.assertFalse(bitSetFactory.get(-1).isEmpty());
+      Assertions.assertEquals(1, bitSetFactory.get(-1).size());
     }
   }
 
@@ -67,10 +68,15 @@ public class FileBitSetFactoryTest extends BitSetFactoryTest{
         for(OffsetBitSet bitSet:bitSets){
           for(int x=0;x<1024;x++){
             Assertions.assertTrue(bitSet.isSet(x));
+            bitSet.clear(x);
+            Assertions.assertFalse(bitSet.isSet(x));
           }
+          bitSetFactory.release(bitSet);
         }
       }
     }
+    try( BitSetFactory bitSetFactory = createFactory(1024)) {
+      Assertions.assertTrue(bitSetFactory.getUniqueIds().isEmpty());
+    }
   }
-
 }

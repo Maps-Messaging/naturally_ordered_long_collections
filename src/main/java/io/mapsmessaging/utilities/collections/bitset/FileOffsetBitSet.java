@@ -20,53 +20,41 @@
 
 package io.mapsmessaging.utilities.collections.bitset;
 
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
+public class FileOffsetBitSet extends OffsetBitSet implements AutoCloseable {
 
-public class ByteBufferBitSetFactoryImpl extends BitSetFactory {
+  private final BitSetFactory factory;
+  @Getter
+  private final long position;
 
-  public ByteBufferBitSetFactoryImpl(int size) {
-    super(size);
+  public FileOffsetBitSet(@NonNull @NotNull ByteBufferBackedBitMap bitSet, long position, long offset, @NonNull @NotNull BitSetFactory factory) {
+    super(bitSet, offset);
+    this.factory = factory;
+    this.position = position;
   }
 
-  @Override
-  public OffsetBitSet open(long uniqueId, long id) {
-    BitSet bs = new ByteBufferBackedBitMap(ByteBuffer.allocateDirect(windowSize / 8), 0, uniqueId);
-    return new OffsetBitSet(bs, getStartIndex(id));
-  }
-
-  @Override
-  public List<Long> getUniqueIds() {
-    return new ArrayList<>();
-  }
-
-  @Override
-  public void close(@NonNull @NotNull OffsetBitSet bitset) {
-    // nothing to do
-  }
-
-  @Override
-  public void release(OffsetBitSet bitset) {
-    bitset.clearAll();
-  }
-
-  @Override
-  public List<OffsetBitSet> get(long uniqueId) {
-    return new ArrayList<>();
-  }
-
-  @Override
-  public void delete() {
-    // no-op
+  public long getUniqueId() {
+    return getBitSet().getUniqueId();
   }
 
   @Override
   public void close() {
-    // no-op
+    factory.release(this);
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    FileOffsetBitSet other = (FileOffsetBitSet) obj;
+    return this.position == other.position && this.getUniqueId() == other.getUniqueId();
+  }
+
+  @Override
+  public int hashCode() {
+    return Long.hashCode(position) * 31 + Long.hashCode(getUniqueId());
+  }
 }

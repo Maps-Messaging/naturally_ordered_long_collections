@@ -21,39 +21,16 @@
 package io.mapsmessaging.utilities.collections.bitset;
 
 import java.io.IOException;
-import java.util.List;
+import java.io.RandomAccessFile;
 
-public abstract class BitSetFactory implements AutoCloseable {
+public interface BitSetFileHeader {
 
-  protected final int windowSize;
+  long getRegistryKey();
+  long getOffset();
 
-  protected BitSetFactory(int size) {
-    windowSize = size;
-  }
+  void readFrom(RandomAccessFile raf) throws IOException;
+  void writeTo(RandomAccessFile raf) throws IOException;
 
-  public void close() throws IOException {
-    // Nothing required to clean up any resources
-  }
+  int size();
 
-  public void delete() throws IOException {
-    // Nothing required to clean up any resources
-  }
-
-  public int getSize() {
-    return windowSize;
-  }
-
-  public long getStartIndex(long id) {
-    return (id / windowSize) * windowSize;
-  }
-
-  public abstract void close(OffsetBitSet bitset);
-
-  public abstract void release(OffsetBitSet bitset);
-
-  public abstract OffsetBitSet open(long uniqueId, long offset) throws IOException;
-
-  public abstract List<OffsetBitSet> get(long uniqueId);
-
-  public abstract List<Long> getUniqueIds();
 }
