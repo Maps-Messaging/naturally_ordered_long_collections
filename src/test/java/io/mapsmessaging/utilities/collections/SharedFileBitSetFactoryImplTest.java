@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
 
 class SharedFileBitSetFactoryImplTest {
 
@@ -71,6 +72,45 @@ class SharedFileBitSetFactoryImplTest {
 
     }
   }
+
+  @Test
+  void testReloadWithUnknownSessionIds() throws IOException {
+    List<Long> sessionIds = List.of(
+        8359L, 5557L, 1106L, 3615L, 7924L,
+        6574L, 5552L, 3547L, 4527L, 6514L,
+        2674L, 2519L, 7224L, 2584L, 6881L,
+        6635L, 5333L, 1711L, 8527L, 9785L
+    );
+    try {
+      // Phase 1: Save data
+      try (SharedFileBitSetFactoryImpl factory = new SharedFileBitSetFactoryImpl(BASE_FILENAME, SHARD_COUNT, WINDOW_SIZE)) {
+        for (long id : sessionIds) {
+          NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue((int)id, factory);
+          queue.offer(id * 10L);
+          queue.offer(id * 10L + 1);
+        }
+      }
+
+      // Phase 2: Reload and discover IDs
+      try (SharedFileBitSetFactoryImpl factory = new SharedFileBitSetFactoryImpl(BASE_FILENAME, SHARD_COUNT, WINDOW_SIZE)) {
+        List<Long> discoveredIds = factory.getUniqueIds().stream().sorted().collect(Collectors.toList());
+        List<Long> expectedIds = sessionIds.stream().sorted().collect(Collectors.toList());
+        Assertions.assertEquals(expectedIds, discoveredIds);
+        for (long id : discoveredIds) {
+          NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue((int)id, factory);
+          Assertions.assertEquals(id * 10L, queue.poll());
+          Assertions.assertEquals(id * 10L + 1, queue.poll());
+          Assertions.assertTrue(queue.isEmpty());
+        }
+      }
+    } finally {
+      for (int i = 0; i < SHARD_COUNT; i++) {
+        Files.deleteIfExists(Paths.get(BASE_FILENAME + "_" + i));
+      }
+    }
+  }
+
+
 
   @Test
   void testShardReloadAndIntegrity() throws Exception {
