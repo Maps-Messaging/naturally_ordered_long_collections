@@ -33,7 +33,7 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
 
   public NaturalOrderedLongList() {}
 
-  public NaturalOrderedLongList(int id, BitSetFactory factory) {
+  public NaturalOrderedLongList(long id, BitSetFactory factory) {
     super(id, factory);
   }
 

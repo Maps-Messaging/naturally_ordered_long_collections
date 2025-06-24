@@ -39,14 +39,14 @@ public class NaturalOrderedCollection implements Collection<Long> {
   private final int size;
 
   @Getter
-  private final int uniqueId;
+  private final long uniqueId;
 
 
   public NaturalOrderedCollection() {
     this(0, new BitSetFactoryImpl(8192));
   }
 
-  public NaturalOrderedCollection(int id, @NonNull BitSetFactory factory) {
+  public NaturalOrderedCollection(long id, @NonNull BitSetFactory factory) {
     tree = new TreeMap<>(new OffsetBitSetComparator());
     this.factory = factory;
     this.size = factory.getSize();

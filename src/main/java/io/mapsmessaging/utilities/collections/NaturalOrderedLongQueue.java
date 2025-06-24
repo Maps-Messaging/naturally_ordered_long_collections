@@ -32,7 +32,7 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
 
   public NaturalOrderedLongQueue() {}
 
-  public NaturalOrderedLongQueue(int id, @NonNull @NotNull BitSetFactory factory) {
+  public NaturalOrderedLongQueue(long id, @NonNull @NotNull BitSetFactory factory) {
     super(id, factory);
   }
 
