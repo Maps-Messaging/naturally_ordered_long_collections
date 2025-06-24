@@ -160,9 +160,6 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   }
 
   public @NonNull @NotNull BitSet getBitSet() {
-    if(rawBitSet == null) {
-      System.err.println("Hmm");
-    }
     return rawBitSet;
   }
 
