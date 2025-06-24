@@ -145,6 +145,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
       try {
         active = factory.open(uniqueId, aLong);
       } catch (IOException e) {
+        e.printStackTrace();
         throw new IORunTimeException("Fatal error opening new bitset, unable to continue", e);
       }
       tree.put(active.getStart(), active);

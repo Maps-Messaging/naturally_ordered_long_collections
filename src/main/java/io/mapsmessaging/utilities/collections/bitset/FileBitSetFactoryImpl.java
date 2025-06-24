@@ -70,13 +70,22 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     if (parent != null && !parent.exists()) {
       Files.createDirectories(testFile.getParentFile().toPath());
     }
-
-    raf = new RandomAccessFile(testFile, "rw");
     emptyBuffer = new byte[bufferSize];
     for (var x = 0; x < bufferSize; x++) {
       emptyBuffer[x] = 0;
     }
-    loadFile();
+
+    File file = new File(filename);
+    if(file.exists() && file.length() > 0) {
+      raf = new RandomAccessFile(testFile, "rw");
+      loadFile();
+      if(used.isEmpty()) {
+        deleteFiles();
+      }
+    }
+    else{
+      deleted = true; // Mark it as being active but file has been deleted, allowing first operation to create it
+    }
   }
 
   private void loadFile() throws IOException {
@@ -111,7 +120,9 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     boolean delete = used.isEmpty();
     clearList(used);
     clearList(free);
-    raf.close();
+    if(raf != null && raf.getChannel().isOpen()) {
+      raf.close();
+    }
     if(delete){
       deleteFiles();
     }
@@ -119,8 +130,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   }
 
   private void deleteFiles() throws IOException {
-
-    if(raf.getChannel().isOpen() ){
+    if(raf != null && raf.getChannel().isOpen() ){
       clearList(used);
       clearList(free);
       raf.close();
