@@ -156,7 +156,7 @@ class SharedFileBitSetFactoryImplTest {
 
       int initialFree = factory.get(-1).size();
       for (int i = 0; i < SESSION_COUNT; i += 2) {
-        queues[i].close();
+        queues[i].clear();
       }
       int increasedFree = factory.get(-1).size();
       Assertions.assertTrue(increasedFree > initialFree);

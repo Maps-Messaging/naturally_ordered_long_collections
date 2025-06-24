@@ -121,7 +121,7 @@ class NaturalOrderedLongQueueTest {
 
       // Release half the queues
       for (int i = 0; i < sessionCount; i += 2) {
-        queues[i].close();
+        queues[i].clear();
       }
 
       int increasedFreeSize = factory.get(-1).size();

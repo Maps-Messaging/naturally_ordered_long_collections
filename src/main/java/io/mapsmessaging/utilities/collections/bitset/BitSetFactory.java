@@ -20,10 +20,11 @@
 
 package io.mapsmessaging.utilities.collections.bitset;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 
-public abstract class BitSetFactory implements AutoCloseable {
+public abstract class BitSetFactory implements Closeable {
 
   protected final int windowSize;
 

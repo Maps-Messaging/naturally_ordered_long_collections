@@ -47,10 +47,6 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
     }
   }
 
-  private FileBitSetFactoryImpl selectShard(long uniqueId) {
-    return shards[(int) (uniqueId % shardCount)];
-  }
-
   @Override
   public OffsetBitSet open(long uniqueId, long start) throws IOException {
     return selectShard(uniqueId).open(uniqueId, start);
@@ -95,6 +91,14 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
     }
   }
 
+  @Override
+  public void delete() throws IOException {
+    for(var shard : shards){
+      shard.delete();
+    }
+  }
+
+
   public List<Long> getAllEventIdsWithInterest() {
     NaturalOrderedLongList result = new NaturalOrderedLongList();
     for (FileBitSetFactoryImpl shard : shards) {
@@ -110,4 +114,16 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
     }
     return result;
   }
+
+
+
+  private FileBitSetFactoryImpl selectShard(long uniqueId) {
+    long index = uniqueId % shardCount;
+    if(index < 0){
+      System.err.println("Index out of bounds"+uniqueId+" "+shardCount);
+      index = 0;
+    }
+    return shards[(int) index];
+  }
+
 }

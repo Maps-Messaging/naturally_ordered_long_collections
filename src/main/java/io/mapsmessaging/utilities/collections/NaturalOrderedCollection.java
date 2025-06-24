@@ -296,7 +296,9 @@ public class NaturalOrderedCollection implements Collection<Long> {
   public void clear() {
     for (OffsetBitSet bitMap : tree.values()) {
       bitMap.clearAll();
+      factory.release(bitMap);
     }
+    tree.clear();
   }
 
   public String toString() {
