@@ -75,8 +75,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
       emptyBuffer[x] = 0;
     }
 
-    File file = new File(filename);
-    if(file.exists() && file.length() > 0) {
+    if(testFile.exists() && testFile.length() > 0) {
       raf = new RandomAccessFile(testFile, "rw");
       loadFile();
       if(used.isEmpty()) {
@@ -190,6 +189,9 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public List<OffsetBitSet> get(long uniqueId) {
+    if(deleted){
+      return new ArrayList<>(); // if the file is deleted, there are no bitsets, lets not open it
+    }
     checkState();
     if(uniqueId == -1){
       return getList(free, uniqueId);
@@ -199,6 +201,9 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public List<Long> getUniqueIds() {
+    if(deleted){
+      return new ArrayList<>(); // if the file is deleted, there are no unique ids, lets not open it
+    }
     checkState();
     Set<Long> ids = new LinkedHashSet<>();
     for (FileOffsetBitSet bitset : used) {
@@ -255,7 +260,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
       try {
         deleteFiles();
       } catch (IOException ignored) {
-        ignored.printStackTrace();
+        // Ignore this
       }
     }, 10, TimeUnit.SECONDS);
   }
