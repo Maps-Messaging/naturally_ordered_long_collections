@@ -65,11 +65,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     bufferSize = size / BITS_PER_BYTE;
     free = new ArrayList<>();
     used = new ArrayList<>();
-    var testFile = new File(filename);
-    var parent = testFile.getParentFile();
-    if (parent != null && !parent.exists()) {
-      Files.createDirectories(testFile.getParentFile().toPath());
-    }
+    var testFile = prepareBackingFile(filename);
     emptyBuffer = new byte[bufferSize];
     for (var x = 0; x < bufferSize; x++) {
       emptyBuffer[x] = 0;
@@ -212,6 +208,15 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     return new ArrayList<>(ids);
   }
 
+  protected File prepareBackingFile(@NonNull String filename) throws IOException {
+    File file = new File(filename);
+    File parent = file.getParentFile();
+    if (parent != null && !parent.exists()) {
+      Files.createDirectories(parent.toPath());
+    }
+    return file;
+  }
+
   private ByteBufferBackedBitMap map(long pos, long uniqueId) throws IOException {
     return new ByteBufferBackedBitMap(raf.getChannel().map(MapMode.READ_WRITE, pos, bufferSize), 0, uniqueId);
   }
@@ -276,7 +281,8 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   private void reopen() {
     try {
       deleted = false;
-      this.raf = new RandomAccessFile(new File(filename), "rw");
+      File file = prepareBackingFile(filename);
+      this.raf = new RandomAccessFile(file, "rw");
       loadFile();
     } catch (IOException e) {
       throw new IllegalStateException("Unable to reopen file", e);

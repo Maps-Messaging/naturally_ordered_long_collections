@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.utilities.collections;
 
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class PriorityCollection<T> implements Collection<T> {
 
+  @Getter
   final List<Queue<T>> priorityStructure;
   final int prioritySize;
   final PriorityFactory<T> priorityFactory;
@@ -84,10 +86,6 @@ public class PriorityCollection<T> implements Collection<T> {
       }
     }
     return sb.toString();
-  }
-
-  public List<Queue<T>> getPriorityStructure() {
-    return priorityStructure;
   }
 
   public boolean isEmpty() {

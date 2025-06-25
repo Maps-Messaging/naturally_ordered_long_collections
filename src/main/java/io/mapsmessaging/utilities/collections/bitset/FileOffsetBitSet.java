@@ -24,7 +24,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-public class FileOffsetBitSet extends OffsetBitSet implements AutoCloseable {
+import java.io.Closeable;
+
+public class FileOffsetBitSet extends OffsetBitSet implements Closeable {
 
   private final BitSetFactory factory;
   @Getter
