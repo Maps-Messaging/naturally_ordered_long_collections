@@ -31,9 +31,9 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   protected BitSet rawBitSet;
   @Getter
-  private long start;
+  protected long start;
   @Getter
-  private long end;
+  protected long end;
 
   private boolean active = true;
 
