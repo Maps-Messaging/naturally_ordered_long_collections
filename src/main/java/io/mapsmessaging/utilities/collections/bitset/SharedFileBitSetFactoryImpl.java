@@ -98,7 +98,6 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
     }
   }
 
-
   public List<Long> getAllEventIdsWithInterest() {
     NaturalOrderedLongList result = new NaturalOrderedLongList();
     for (FileBitSetFactoryImpl shard : shards) {
@@ -115,15 +114,8 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
     return result;
   }
 
-
-
   private FileBitSetFactoryImpl selectShard(long uniqueId) {
-    long index = uniqueId % shardCount;
-    if(index < 0){
-      System.err.println("Index out of bounds"+uniqueId+" "+shardCount);
-      index = 0;
-    }
-    return shards[(int) index];
+    return shards[Math.floorMod(uniqueId, shardCount)];
   }
 
 }
