@@ -160,6 +160,25 @@ public class PriorityCollection<T> implements Collection<T> {
     return result;
   }
 
+  public int removeAndGetPriority(T entry) {
+    if (priorityFactory != null) {
+      int priority = priorityFactory.getPriority(entry);
+      if (priorityStructure.get(priority).remove(entry)) {
+        entryCount.decrementAndGet();
+        return priority;
+      }
+    } else {
+      for (int i = 0; i < priorityStructure.size(); i++) {
+        if (priorityStructure.get(i).remove(entry)) {
+          entryCount.decrementAndGet();
+          return i;
+        }
+      }
+    }
+    return -1;
+  }
+
+
   @Override
   public boolean addAll(Collection<? extends T> rhsCollection) {
     if(rhsCollection instanceof PriorityCollection){
