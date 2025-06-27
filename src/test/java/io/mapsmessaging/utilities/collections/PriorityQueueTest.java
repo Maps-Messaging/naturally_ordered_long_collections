@@ -120,6 +120,35 @@ public abstract class PriorityQueueTest  {
     }
   }
 
+  @Test
+  public void testRemoveAndGetPriorityValid() {
+    int priorities = 4;
+    PriorityQueue<TestData> queue = createQueue(priorities);
+    TestData entry = new TestData(42, 2);
+    queue.offer(entry);
+
+    int returnedPriority = queue.removeAndGetPriority(entry);
+
+    Assertions.assertEquals(2, returnedPriority);
+    Assertions.assertEquals(0, queue.size());
+  }
+  @Test
+  public void testRemoveAndGetPriorityInvalid() {
+    int priorities = 4;
+    PriorityQueue<TestData> queue = createQueue(priorities);
+    TestData existing = new TestData(42, 1);
+    TestData nonExistent = new TestData(99, 3);
+
+    queue.offer(existing);
+
+    int result = queue.removeAndGetPriority(nonExistent);
+
+    Assertions.assertEquals(-1, result);
+    Assertions.assertEquals(1, queue.size());
+  }
+
+
+
   private void alternateDrainMethods(int entries, int priorities) {
     PriorityQueue<TestData> priorityQueue = createAndInsert(entries, priorities);
     for (int x = 0; x < priorities; x++) {
