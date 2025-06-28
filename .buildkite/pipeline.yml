@@ -3,7 +3,6 @@ steps:
     command:
       - export SONAR_TOKEN=$(buildkite-agent secret get SONAR_TOKEN)
       - export NVD_API_KEY=$(buildkite-agent secret get nvd_api_key)
-      - export BUILDKITE_ANALYTICS_TOKEN=$(buildkite-agent secret get NaturalOrderedLongBuildKiteToken )
       - mvn -Dgpg.skip=true clean deploy
       - mvn sonar:sonar -Dsonar.login=${SONAR_TOKEN}
     plugins:
@@ -12,6 +11,6 @@ steps:
           format: "junit"
     env:
       SONAR_TOKEN: "${SONAR_TOKEN}"
-      BUILDKITE_ANALYTICS_TOKEN: ${BUILDKITE_ANALYTICS_TOKEN}
+      BUILDKITE_ANALYTICS_TOKEN: "$(buildkite-agent secret get NaturalOrderedLongBuildKiteToken)"
     agents:
       queue: "java_build_queue"
