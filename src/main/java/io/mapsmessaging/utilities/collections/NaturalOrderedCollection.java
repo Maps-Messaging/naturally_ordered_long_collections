@@ -310,6 +310,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public void clear() {
+    validateTree();
     for (OffsetBitSet bitMap : tree.values()) {
       bitMap.clearAll();
       factory.release(bitMap);
