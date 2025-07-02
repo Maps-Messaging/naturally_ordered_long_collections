@@ -166,9 +166,11 @@ public class NaturalOrderedCollection implements Collection<Long> {
           }
           factory.release(active);
         }
+        validateTree();
         return result;
       }
     }
+    validateTree();
     return false;
   }
 
@@ -239,6 +241,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
         remove(value);
       }
     }
+    validateTree();
     return true;
   }
 
@@ -251,6 +254,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
         itr.remove();
       }
     }
+    validateTree();
     return false;
   }
 
@@ -276,6 +280,8 @@ public class NaturalOrderedCollection implements Collection<Long> {
         changed = true;
       }
     }
+    validateTree();
+
     return changed;
   }
 
@@ -297,6 +303,8 @@ public class NaturalOrderedCollection implements Collection<Long> {
         }
       }
     }
+    validateTree();
+
     return changed;
   }
 
@@ -309,8 +317,22 @@ public class NaturalOrderedCollection implements Collection<Long> {
     tree.clear();
   }
 
-  public String toString() {
+  private void validateTree(){
+    Iterator<Map.Entry<Long, OffsetBitSet>> iterator = tree.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<Long, OffsetBitSet> entry = iterator.next();
+      OffsetBitSet bitSet = entry.getValue();
+      if (!bitSet.isActive()) {
+        Exception ex = new Exception("Fatal error removing " + bitSet + " since this is not active");
+        ex.fillInStackTrace();
+        ex.printStackTrace();
+        iterator.remove();
+      }
+    }
 
+  }
+
+  public String toString() {
     return "Tree:"+tree.toString() +" size = " + size();
   }
 
