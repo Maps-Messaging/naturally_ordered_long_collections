@@ -55,11 +55,11 @@ public class FileOffsetBitSet extends OffsetBitSet implements Closeable {
     if (this == obj) return true;
     if (obj == null || getClass() != obj.getClass()) return false;
     FileOffsetBitSet other = (FileOffsetBitSet) obj;
-    return this.position == other.position && this.getUniqueId() == other.getUniqueId();
+    return this.position == other.position && this.getShardId() == other.getShardId();
   }
 
   @Override
   public int hashCode() {
-    return Long.hashCode(position) * 31 + Long.hashCode(getUniqueId());
+    return Long.hashCode(position) * 31 + Long.hashCode(getShardId());
   }
 }
