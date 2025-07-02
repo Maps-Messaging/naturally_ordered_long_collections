@@ -35,6 +35,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   @Getter
   protected long end;
 
+  @Getter
   private boolean active = true;
 
   private Exception clearTrace;

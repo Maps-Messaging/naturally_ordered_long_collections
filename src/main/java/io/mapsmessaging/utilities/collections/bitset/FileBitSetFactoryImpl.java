@@ -150,7 +150,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   }
 
   @Override
-  public OffsetBitSet open(long uniqueId, long offset) throws IOException {
+  public synchronized OffsetBitSet open(long uniqueId, long offset) throws IOException {
     checkState();
     if(closed)throw new IllegalStateException ("BitSet file is closed");
     FileOffsetBitSet response;
@@ -175,7 +175,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   }
 
   @Override
-  public void release(@NonNull @NotNull OffsetBitSet bitset) {
+  public synchronized void release(@NonNull @NotNull OffsetBitSet bitset) {
     FileOffsetBitSet fb = (FileOffsetBitSet) bitset;
     if(fb.getShardId() != shard) {
       Exception ex = new Exception("Releasing bitset from another shard "+shard+" to "+fb.getShardId());
@@ -235,7 +235,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     return new ByteBufferBackedBitMap(raf.getChannel().map(MapMode.READ_WRITE, pos, bufferSize), 0, uniqueId);
   }
 
-  private List<OffsetBitSet> getList(List<FileOffsetBitSet> list, long uniqueId) {
+  private synchronized List<OffsetBitSet> getList(List<FileOffsetBitSet> list, long uniqueId) {
     List<OffsetBitSet> response = new ArrayList<>();
     for (FileOffsetBitSet bitset : list) {
       if (bitset.getUniqueId() == uniqueId) {
@@ -261,9 +261,11 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   private void clearList(@NonNull @NotNull List<FileOffsetBitSet> list) {
     for (FileOffsetBitSet bitmap : list) {
-      ByteBufferBackedBitMap mapped = (ByteBufferBackedBitMap) bitmap.getBitSet();
-      bitmap.releaseBitSet();
-      unmap(mapped);
+      if(bitmap.isActive()) {
+        ByteBufferBackedBitMap mapped = (ByteBufferBackedBitMap) bitmap.getBitSet();
+        bitmap.releaseBitSet();
+        unmap(mapped);
+      }
     }
     list.clear();
   }
