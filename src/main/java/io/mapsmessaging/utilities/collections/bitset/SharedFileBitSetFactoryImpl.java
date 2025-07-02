@@ -49,7 +49,7 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public OffsetBitSet open(long uniqueId, long start) throws IOException {
-    return selectShard(uniqueId).open(uniqueId, start);
+    return computeShard(uniqueId).open(uniqueId, start);
   }
 
   @Override
@@ -61,7 +61,7 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
       }
       return bitSets;
     }
-    return selectShard(uniqueId).get(uniqueId);
+    return computeShard(uniqueId).get(uniqueId);
   }
 
 
@@ -76,16 +76,16 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public void release(OffsetBitSet bitSet) {
-    FileBitSetFactoryImpl fileBitSetFactory = selectShard(( (FileOffsetBitSet)  bitSet).getUniqueId());
+    FileBitSetFactoryImpl fileBitSetFactory = selectShard((FileOffsetBitSet) bitSet);
     if(fileBitSetFactory.getShard() != ((FileOffsetBitSet) bitSet).getShardId()){
-      System.err.println("Wrong shard selected "+fileBitSetFactory.getShard()+" should be "+fileBitSetFactory.getShard());
+      System.err.println("Wrong shard selected "+fileBitSetFactory.getShard()+" should be "+((FileOffsetBitSet) bitSet).getShardId());
     }
     fileBitSetFactory.release(bitSet);
   }
 
   @Override
   public void close(OffsetBitSet bitSet) {
-    selectShard(( (FileOffsetBitSet)  bitSet).getUniqueId()).close(bitSet);
+    selectShard((FileOffsetBitSet) bitSet).close(bitSet);
   }
 
   @Override
@@ -118,8 +118,11 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
     return result;
   }
 
-  private FileBitSetFactoryImpl selectShard(long uniqueId) {
-    return shards[Math.floorMod(uniqueId, shardCount)];
+  private FileBitSetFactoryImpl selectShard(FileOffsetBitSet bitset) {
+    return shards[bitset.getShardId()];
   }
 
+  private FileBitSetFactoryImpl computeShard(long uniqueId) {
+    return shards[Math.floorMod(uniqueId, shardCount)];
+  }
 }
