@@ -91,10 +91,8 @@ public class DelegatingOffsetBitSet extends OffsetBitSet {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
     if (!(o instanceof DelegatingOffsetBitSet)) return false;
-    DelegatingOffsetBitSet that = (DelegatingOffsetBitSet) o;
-    return this.uniqueId == that.uniqueId && this.getStart() == that.getStart();
+    return (this == o);
   }
 
   @Override

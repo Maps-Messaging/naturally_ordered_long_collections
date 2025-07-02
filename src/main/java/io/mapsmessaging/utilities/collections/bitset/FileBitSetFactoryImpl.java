@@ -176,21 +176,15 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public synchronized void release(@NonNull @NotNull OffsetBitSet bitset) {
-    FileOffsetBitSet fb = (FileOffsetBitSet) bitset;
-    if(fb.getShardId() != shard) {
-      Exception ex = new Exception("Releasing bitset from another shard "+shard+" to "+fb.getShardId());
-      ex.fillInStackTrace();
-      ex.printStackTrace();
-    }
     checkState();
-    bitset.reset(0, -1);
     try {
       updateRecord(((FileOffsetBitSet) bitset).getPosition(), -1, 0);
     } catch (IOException e) {
       // Log this
     }
-    free.add((FileOffsetBitSet) bitset);
     used.remove(bitset);
+    bitset.reset(0, -1);
+    free.add((FileOffsetBitSet) bitset);
     if(used.isEmpty()){
       scheduleDelete();
     }

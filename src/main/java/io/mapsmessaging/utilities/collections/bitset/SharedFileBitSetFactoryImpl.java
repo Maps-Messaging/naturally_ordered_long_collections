@@ -77,9 +77,6 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
   @Override
   public void release(OffsetBitSet bitSet) {
     FileBitSetFactoryImpl fileBitSetFactory = selectShard((FileOffsetBitSet) bitSet);
-    if(fileBitSetFactory.getShard() != ((FileOffsetBitSet) bitSet).getShardId()){
-      System.err.println("Wrong shard selected "+fileBitSetFactory.getShard()+" should be "+((FileOffsetBitSet) bitSet).getShardId());
-    }
     fileBitSetFactory.release(bitSet);
   }
 
