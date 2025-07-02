@@ -37,6 +37,9 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   private boolean active = true;
 
+  private Exception clearTrace;
+  private String threadName;
+
   public OffsetBitSet(@NonNull @NotNull BitSet bitSet, long offset) {
     rawBitSet = bitSet;
     this.start = offset;
@@ -46,6 +49,9 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   public void releaseBitSet() {
     rawBitSet = null;
     active = false;
+    clearTrace = new Exception();
+    clearTrace.fillInStackTrace();
+    threadName = Thread.currentThread().getName();
   }
 
   public void clear(){
@@ -160,6 +166,10 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   }
 
   public @NonNull @NotNull BitSet getBitSet() {
+    if(rawBitSet == null) {
+      System.err.println("Bit set has been released by "+threadName);
+      clearTrace.printStackTrace(System.err);
+    }
     return rawBitSet;
   }
 
@@ -172,7 +182,11 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   }
 
   private void ensureActive() {
-    if (!active) throw new IllegalStateException("BitSet has been released");
+    if (!active) {
+      System.err.println("Bit set has been released by "+threadName);
+      clearTrace.printStackTrace(System.err);
+      throw new IllegalStateException("BitSet has been released");
+    }
   }
 
   public Iterator<Long> iterator() {
