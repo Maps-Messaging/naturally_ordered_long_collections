@@ -124,7 +124,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     scheduler.shutdownNow();
   }
 
-  private void deleteFiles() throws IOException {
+  private synchronized void deleteFiles() throws IOException {
     if(raf != null && raf.getChannel().isOpen() ){
       clearList(used);
       clearList(free);
@@ -176,7 +176,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
       // Log this
     }
     free.add((FileOffsetBitSet) bitset);
-    used.remove((FileOffsetBitSet) bitset);
+    used.remove(bitset);
     if(used.isEmpty()){
       scheduleDelete();
     }
@@ -270,7 +270,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     }, 10, TimeUnit.SECONDS);
   }
 
-  private void checkState() {
+  private synchronized void checkState() {
     if(closed) throw new IllegalStateException("BitSet file is closed");
     if (deleteTask != null && !deleteTask.isDone()) deleteTask.cancel(false);
     if(deleted) {
