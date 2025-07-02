@@ -161,7 +161,9 @@ public class NaturalOrderedCollection implements Collection<Long> {
       if (active != null) {
         boolean result = active.clear(value);
         if (result && active.isEmpty()) {
-          tree.remove(active.getStart());
+          if(tree.remove(active.getStart()) == null){
+            System.err.println("Failed to remove "+active.getStart());
+          }
           factory.release(active);
         }
         return result;
