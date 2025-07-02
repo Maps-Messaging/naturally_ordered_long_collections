@@ -193,6 +193,11 @@ public class NaturalOrderedCollection implements Collection<Long> {
       NaturalOrderedCollection rhs = (NaturalOrderedCollection)c;
       Collection<OffsetBitSet> bitsets = rhs.tree.values();
       for(OffsetBitSet toAddBitset:bitsets){
+        if(!toAddBitset.isActive()){
+          System.err.println("Fatal error removing "+toAddBitset+" since this is not active");
+          tree.remove(toAddBitset.getStart());
+          continue;
+        }
         OffsetBitSet copy = tree.get(toAddBitset.getStart());
         if(copy == null){
           try {
@@ -305,7 +310,8 @@ public class NaturalOrderedCollection implements Collection<Long> {
   }
 
   public String toString() {
-    return "size = " + size();
+
+    return "Tree:"+tree.toString() +" size = " + size();
   }
 
   protected boolean isMatching(Collection<?> c){
