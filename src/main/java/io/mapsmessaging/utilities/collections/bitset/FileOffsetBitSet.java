@@ -31,11 +31,14 @@ public class FileOffsetBitSet extends OffsetBitSet implements Closeable {
   private final BitSetFactory factory;
   @Getter
   private final long position;
+  @Getter
+  private final int shardId;
 
-  public FileOffsetBitSet(@NonNull @NotNull ByteBufferBackedBitMap bitSet, long position, long offset, @NonNull @NotNull BitSetFactory factory) {
+  public FileOffsetBitSet(@NonNull @NotNull ByteBufferBackedBitMap bitSet, long position, long offset, @NonNull @NotNull BitSetFactory factory, int shardId) {
     super(bitSet, offset);
     this.factory = factory;
     this.position = position;
+    this.shardId = shardId;
   }
 
   public long getUniqueId() {

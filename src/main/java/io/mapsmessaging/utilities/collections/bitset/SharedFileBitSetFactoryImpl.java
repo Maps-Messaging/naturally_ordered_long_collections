@@ -43,7 +43,7 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
 
     for (int i = 0; i < shardCount; i++) {
       String shardFile = baseFilename + "_" + i;
-      shards[i] = new FileBitSetFactoryImpl(shardFile, windowSize);
+      shards[i] = new FileBitSetFactoryImpl(shardFile, windowSize, i);
     }
   }
 
@@ -76,7 +76,11 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public void release(OffsetBitSet bitSet) {
-    selectShard(( (FileOffsetBitSet)  bitSet).getUniqueId()).release(bitSet);
+    FileBitSetFactoryImpl fileBitSetFactory = selectShard(( (FileOffsetBitSet)  bitSet).getUniqueId());
+    if(fileBitSetFactory.getShard() != ((FileOffsetBitSet) bitSet).getShardId()){
+      System.err.println("Wrong shard selected "+fileBitSetFactory.getShard()+" should be "+fileBitSetFactory.getShard());
+    }
+    fileBitSetFactory.release(bitSet);
   }
 
   @Override

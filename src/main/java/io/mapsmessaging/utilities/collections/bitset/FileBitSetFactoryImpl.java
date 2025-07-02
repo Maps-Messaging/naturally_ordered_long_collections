@@ -21,6 +21,7 @@
 package io.mapsmessaging.utilities.collections.bitset;
 
 import io.mapsmessaging.utilities.collections.MappedBufferHelper;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,6 +51,8 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   private final String filename;
   private final int bufferSize;
   private final byte[] emptyBuffer;
+  @Getter
+  private final int shard;
 
   private RandomAccessFile raf;
   private boolean closed;
@@ -58,7 +61,12 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
   public FileBitSetFactoryImpl(@NonNull @NotNull String filename, int size) throws IOException {
+    this(filename, size, 0);
+  }
+
+  public FileBitSetFactoryImpl(@NonNull @NotNull String filename, int size, int shard) throws IOException {
     super(size);
+    this.shard = shard;
     closed = false;
     deleted = false;
     this.filename = filename;
@@ -92,7 +100,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
       long offset = raf.readLong();
       pos += HEADER_SIZE;
       ByteBufferBackedBitMap bitmap = map(pos, uniqueId);
-      FileOffsetBitSet bitset = new FileOffsetBitSet(bitmap, pos - HEADER_SIZE, offset, this);
+      FileOffsetBitSet bitset = new FileOffsetBitSet(bitmap, pos - HEADER_SIZE, offset, this, shard);
       if (uniqueId != -1) {
         used.add(bitset);
       } else {
@@ -151,7 +159,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
       long end = raf.length();
       createRecord(end, uniqueId, offset);
       ByteBufferBackedBitMap bitmap = map(end + HEADER_SIZE, uniqueId);
-      response = new FileOffsetBitSet(bitmap, end, offset, this);
+      response = new FileOffsetBitSet(bitmap, end, offset, this, shard);
     } else {
       response = free.remove(0);
       updateRecord(response.getPosition(), uniqueId, offset);
@@ -168,6 +176,12 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public void release(@NonNull @NotNull OffsetBitSet bitset) {
+    FileOffsetBitSet fb = (FileOffsetBitSet) bitset;
+    if(fb.getShardId() != shard) {
+      Exception ex = new Exception("Releasing bitset from another shard "+shard+" to "+fb.getShardId());
+      ex.fillInStackTrace();
+      ex.printStackTrace();
+    }
     checkState();
     bitset.reset(0, -1);
     try {
