@@ -53,6 +53,15 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
   }
 
   @Override
+  public String toString(){
+    StringBuilder sb = new StringBuilder();
+    for(FileBitSetFactoryImpl f : shards){
+      sb.append(f.toString()).append("\n");
+    }
+    return sb.toString();
+  }
+
+  @Override
   public List<OffsetBitSet> get(long uniqueId) {
     if(uniqueId < 0){
       List<OffsetBitSet> bitSets = new ArrayList<>();

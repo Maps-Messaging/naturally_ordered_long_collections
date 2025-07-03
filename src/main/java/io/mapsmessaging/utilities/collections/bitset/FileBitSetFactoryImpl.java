@@ -91,6 +91,21 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     }
   }
 
+  @Override
+  public String toString(){
+    StringBuilder sb = new StringBuilder();
+    sb
+        .append("FileName:").append(filename).append("\n")
+        .append(" Size:").append(bufferSize).append("\n")
+        .append(" Free:").append(free.size()).append("\n")
+        .append(" Used:").append(used.size()).append("\n")
+        .append(" Closed:").append(closed).append("\n")
+        .append(" Deleted:").append(deleted).append("\n")
+        .append(" Shard:").append(shard).append("\n");
+
+    return sb.toString();
+  }
+
   private void loadFile() throws IOException {
     long len = raf.length();
     long pos = 0;
