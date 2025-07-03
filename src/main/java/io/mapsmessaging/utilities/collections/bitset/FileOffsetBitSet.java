@@ -22,6 +22,7 @@ package io.mapsmessaging.utilities.collections.bitset;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
@@ -34,11 +35,16 @@ public class FileOffsetBitSet extends OffsetBitSet implements Closeable {
   @Getter
   private final int shardId;
 
+  @Getter
+  @Setter
+  private boolean allocated;
+
   public FileOffsetBitSet(@NonNull @NotNull ByteBufferBackedBitMap bitSet, long position, long offset, @NonNull @NotNull BitSetFactory factory, int shardId) {
     super(bitSet, offset);
     this.factory = factory;
     this.position = position;
     this.shardId = shardId;
+    allocated = false;
   }
 
   public long getUniqueId() {
@@ -47,8 +53,21 @@ public class FileOffsetBitSet extends OffsetBitSet implements Closeable {
 
   @Override
   public void close() {
+    allocated = false;
     factory.release(this);
   }
+
+  @Override
+  public void reset(long start, long uniqueId) {
+    if(uniqueId != -1 && allocated) {
+      Exception ex = new Exception();
+      ex.fillInStackTrace();
+      ex.printStackTrace();
+    }
+    allocated = uniqueId != -1;
+    super.reset(start, uniqueId);
+  }
+
 
   @Override
   public boolean equals(Object obj) {
