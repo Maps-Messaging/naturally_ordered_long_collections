@@ -145,7 +145,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
       try {
         active = factory.open(uniqueId, aLong);
       } catch (IOException e) {
-        e.printStackTrace();
         throw new IORunTimeException("Fatal error opening new bitset, unable to continue", e);
       }
       tree.put(active.getStart(), active);
@@ -161,9 +160,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
       if (active != null) {
         boolean result = active.clear(value);
         if (result && active.isEmpty()) {
-          if(tree.remove(active.getStart()) == null){
-            System.err.println("Failed to remove "+active.getStart());
-          }
+          tree.remove(active.getStart());
           factory.release(active);
         }
         validateTree();
@@ -196,7 +193,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
       Collection<OffsetBitSet> bitsets = rhs.tree.values();
       for(OffsetBitSet toAddBitset:bitsets){
         if(!toAddBitset.isActive()){
-          System.err.println("Fatal error removing "+toAddBitset+" since this is not active");
           tree.remove(toAddBitset.getStart());
           continue;
         }
@@ -324,13 +320,9 @@ public class NaturalOrderedCollection implements Collection<Long> {
       Map.Entry<Long, OffsetBitSet> entry = iterator.next();
       OffsetBitSet bitSet = entry.getValue();
       if (!bitSet.isActive()) {
-        Exception ex = new Exception("Fatal error removing " + bitSet + " since this is not active");
-        ex.fillInStackTrace();
-        ex.printStackTrace();
         iterator.remove();
       }
     }
-
   }
 
   public String toString() {

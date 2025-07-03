@@ -64,15 +64,9 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
       // Check and see if this was the last entry in the bit set, if so then remove the entry
       //
       if (current.isEmpty() && tree.size() > 1) {
-        if(tree.remove(current.getStart()) == null){
-          System.err.println("Failed to remove element 1");
-        }
         factory.release(current);
       }
       return val;
-    }
-    if(tree.remove(current.getStart()) == null){
-      System.err.println("Failed to remove element 2");
     }
     factory.release(current);
     return poll();
