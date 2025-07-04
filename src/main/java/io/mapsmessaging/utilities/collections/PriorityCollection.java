@@ -127,6 +127,7 @@ public class PriorityCollection<T> implements Collection<T> {
         size += ts.size();
       }
     }
+    entryCount.set(size);
     return size;
   }
 
