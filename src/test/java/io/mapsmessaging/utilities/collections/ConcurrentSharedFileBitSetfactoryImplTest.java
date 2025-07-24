@@ -20,13 +20,14 @@
 
 package io.mapsmessaging.utilities.collections;
 
+import io.mapsmessaging.utilities.collections.bitset.ConcurrentSharedFileBitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.SharedFileBitSetFactoryImpl;
 
 import java.io.IOException;
 
-public class SharedFileBitSetFactoryImplTest extends BaseSharedFileBitSetFactoryImplTest{
+public class ConcurrentSharedFileBitSetfactoryImplTest extends BaseSharedFileBitSetFactoryImplTest{
   @Override
   protected SharedFileBitSetFactoryImpl buildFactory() throws IOException {
-    return new SharedFileBitSetFactoryImpl(BASE_FILENAME, SHARD_COUNT, WINDOW_SIZE);
+    return new ConcurrentSharedFileBitSetFactoryImpl(BASE_FILENAME, SHARD_COUNT, WINDOW_SIZE);
   }
 }
