@@ -244,15 +244,17 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public boolean removeIf(Predicate<? super Long> filter) {
+    boolean res = false;
     Objects.requireNonNull(filter);
     Iterator<Long> itr = new LongIterator();
     while (itr.hasNext()) {
       if (filter.test(itr.next())) {
         itr.remove();
+        res = true;
       }
     }
     validateTree();
-    return false;
+    return res;
   }
 
   @Override
