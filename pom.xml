@@ -94,7 +94,7 @@
 
     <sonar.sources>src/main</sonar.sources>
     <sonar.test.exclusions>
-      **/*Test.*,**/*IT.*, **.*JMH.*
+      **/*Test.*,**/*IT.*,  **/*JMH.*
     </sonar.test.exclusions>
   </properties>
 
@@ -186,6 +186,7 @@
           <excludes>
             <!-- test code, lets not track the testing -->
             <exclude>**/*Test.*</exclude>
+            <exclude>**/*JMH.*</exclude>
           </excludes>
         </configuration>
         <executions>
