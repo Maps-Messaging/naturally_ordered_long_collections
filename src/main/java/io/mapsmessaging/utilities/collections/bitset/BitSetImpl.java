@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Iterator;
 import java.util.ListIterator;
 
-@SuppressWarnings(" javaarchitecture:S7027") // ByteBufferBackedBitMap is used here but only to access internal functions for speed
+@SuppressWarnings("squid:S7027") // ByteBufferBackedBitMap is used here but only to access internal functions for speed
 @ToString
 public class BitSetImpl implements BitSet {
 

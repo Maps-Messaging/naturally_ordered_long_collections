@@ -33,7 +33,7 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.ListIterator;
 
-@SuppressWarnings(" javaarchitecture:S7027")
+@SuppressWarnings("squid:S7027")
 public class ByteBufferBackedBitMap implements BitSet {
 
   private static final long LONG_MASK = 0xffffffffffffffffL;
