@@ -26,6 +26,8 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class FileOffsetBitSet extends OffsetBitSet implements Closeable {
 
@@ -59,10 +61,8 @@ public class FileOffsetBitSet extends OffsetBitSet implements Closeable {
 
   @Override
   public void reset(long start, long uniqueId) {
-    if(uniqueId != -1 && allocated) {
-      Exception ex = new Exception();
-      ex.fillInStackTrace();
-      ex.printStackTrace();
+    if (uniqueId != -1 && allocated) {
+      Logger.getLogger(FileOffsetBitSet.class.getName()).log(Level.ALL, "Resetting offset bitset {0} on a currently allocated bitset", uniqueId);
     }
     allocated = uniqueId != -1;
     super.reset(start, uniqueId);

@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.ListIterator;
 
+@SuppressWarnings(" javaarchitecture:S7027")
 public class ByteBufferBackedBitMap implements BitSet {
 
   private static final long LONG_MASK = 0xffffffffffffffffL;
@@ -255,7 +256,7 @@ public class ByteBufferBackedBitMap implements BitSet {
   // <editor-fold desc="Search Functions">
   @Override
   public int nextSetBit(int fromIndex) {
-    if (fromIndex < 0 || fromIndex >= capacity){
+    if (fromIndex < 0 || fromIndex >= capacity) {
       return -1;
     }
 
@@ -326,7 +327,7 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public int previousSetBit(int fromIndex) {
-    if (fromIndex < 0 || fromIndex >= capacity){
+    if (fromIndex < 0 || fromIndex >= capacity) {
       return -1;
     }
     var internalBit = checkBoundary(fromIndex);

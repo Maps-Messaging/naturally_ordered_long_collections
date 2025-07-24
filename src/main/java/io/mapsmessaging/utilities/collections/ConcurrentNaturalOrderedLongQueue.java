@@ -39,30 +39,115 @@ public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
     super(id, factory);
   }
 
-  @Override public synchronized boolean offer(Long aLong) { return super.offer(aLong); }
-  @Override public synchronized Long remove() { return super.remove(); }
-  @Override public synchronized Long poll() { return super.poll(); }
-  @Override public synchronized Long element() { return super.element(); }
-  @Override public synchronized Long peek() { return super.peek(); }
-  @Override public synchronized int size() { return super.size(); }
-  @Override public synchronized boolean isEmpty() { return super.isEmpty(); }
-  @Override public synchronized void clear() { super.clear(); }
+  @Override
+  public synchronized boolean offer(Long aLong) {
+    return super.offer(aLong);
+  }
+
+  @Override
+  public synchronized Long remove() {
+    return super.remove();
+  }
+
+  @Override
+  public synchronized Long poll() {
+    return super.poll();
+  }
+
+  @Override
+  public synchronized Long element() {
+    return super.element();
+  }
+
+  @Override
+  public synchronized Long peek() {
+    return super.peek();
+  }
+
+  @Override
+  public synchronized int size() {
+    return super.size();
+  }
+
+  @Override
+  public synchronized boolean isEmpty() {
+    return super.isEmpty();
+  }
+
+  @Override
+  public synchronized void clear() {
+    super.clear();
+  }
 
   // From NaturalOrderedCollection
-  @Override public synchronized boolean add(Long aLong) { return super.add(aLong); }
-  @Override public synchronized boolean remove(Object o) { return super.remove(o); }
-  @Override public synchronized boolean contains(Object o) { return super.contains(o); }
-  @Override public synchronized boolean containsAll(@NonNull Collection<?> c) { return super.containsAll(c); }
-  @Override public synchronized boolean addAll(@NonNull Collection<? extends Long> c) { return super.addAll(c); }
-  @Override public synchronized boolean removeAll(@NonNull Collection<?> c) { return super.removeAll(c); }
-  @Override public synchronized boolean retainAll(@NonNull Collection<?> c) { return super.retainAll(c); }
-  @Override public synchronized boolean removeIf(Predicate<? super Long> filter) { return super.removeIf(filter); }
-  @Override public synchronized @NotNull Object[] toArray() { return super.toArray(); }
-  @Override public synchronized <T> T[] toArray(T[] a) { return super.toArray(a); }
-  @Override public synchronized void forEach(Consumer<? super Long> action) { super.forEach(action); }
-  @Override public synchronized @NotNull Iterator<Long> iterator() { return super.iterator(); }
-  @Override public synchronized void close() { super.close(); }
+  @Override
+  public synchronized boolean add(Long aLong) {
+    return super.add(aLong);
+  }
+
+  @Override
+  public synchronized boolean remove(Object o) {
+    return super.remove(o);
+  }
+
+  @Override
+  public synchronized boolean contains(Object o) {
+    return super.contains(o);
+  }
+
+  @Override
+  public synchronized boolean containsAll(@NonNull Collection<?> c) {
+    return super.containsAll(c);
+  }
+
+  @Override
+  public synchronized boolean addAll(@NonNull Collection<? extends Long> c) {
+    return super.addAll(c);
+  }
+
+  @Override
+  public synchronized boolean removeAll(@NonNull Collection<?> c) {
+    return super.removeAll(c);
+  }
+
+  @Override
+  public synchronized boolean retainAll(@NonNull Collection<?> c) {
+    return super.retainAll(c);
+  }
+
+  @Override
+  public synchronized boolean removeIf(Predicate<? super Long> filter) {
+    return super.removeIf(filter);
+  }
+
+  @Override
+  public synchronized @NotNull Object[] toArray() {
+    return super.toArray();
+  }
+
+  @Override
+  public synchronized <T> T[] toArray(T[] a) {
+    return super.toArray(a);
+  }
+
+  @Override
+  public synchronized void forEach(Consumer<? super Long> action) {
+    super.forEach(action);
+  }
+
+  @Override
+  public synchronized @NotNull Iterator<Long> iterator() {
+    return super.iterator();
+  }
+
+  @Override
+  public synchronized void close() {
+    super.close();
+  }
 
   // Optional: expose unique ID if needed
-  @Override public synchronized long getUniqueId() { return super.getUniqueId(); }
+  @Override
+  public synchronized long getUniqueId() {
+    return super.getUniqueId();
+  }
 }

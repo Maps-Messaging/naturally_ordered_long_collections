@@ -30,11 +30,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class PriorityCollection<T> implements Collection<T> {
 
+  protected final AtomicLong entryCount;
   @Getter
   final List<Queue<T>> priorityStructure;
   final int prioritySize;
   final PriorityFactory<T> priorityFactory;
-  protected final AtomicLong entryCount;
 
   public PriorityCollection(int priorityBound, @Nullable PriorityFactory<T> factory) {
     if (priorityBound <= 0) {
@@ -46,7 +46,7 @@ public class PriorityCollection<T> implements Collection<T> {
     for (var x = 0; x < priorityBound; x++) {
       priorityStructure.add(new LinkedList<>());
     }
-    entryCount=new AtomicLong(0);
+    entryCount = new AtomicLong(0);
   }
 
   public PriorityCollection(Queue<T>[] priorityQueues, @Nullable PriorityFactory<T> factory) {
@@ -57,7 +57,7 @@ public class PriorityCollection<T> implements Collection<T> {
     prioritySize = priorityQueues.length;
     priorityFactory = factory;
     priorityStructure.addAll(Arrays.asList(priorityQueues).subList(0, prioritySize));
-    entryCount=new AtomicLong(0);
+    entryCount = new AtomicLong(0);
   }
 
   public void close() {
@@ -70,19 +70,19 @@ public class PriorityCollection<T> implements Collection<T> {
     entryCount.set(0);
   }
 
-  public Queue<T> flatten (Queue<T> flattenQueue){
+  public Queue<T> flatten(Queue<T> flattenQueue) {
     for (Queue<T> queue : priorityStructure) {
       flattenQueue.addAll(queue);
     }
     return flattenQueue;
   }
 
-  public String toString(){
+  public String toString() {
     var sb = new StringBuilder("Count:");
     sb.append(entryCount).append(",");
     for (Queue<T> queue : priorityStructure) {
-      if(!queue.isEmpty()) {
-        sb.append(queue.toString()).append("\n");
+      if (!queue.isEmpty()) {
+        sb.append(queue).append("\n");
       }
     }
     return sb.toString();
@@ -94,7 +94,7 @@ public class PriorityCollection<T> implements Collection<T> {
 
   @Override
   public boolean contains(Object o) {
-    if(entryCount.get() != 0) {
+    if (entryCount.get() != 0) {
       for (Queue<T> ts : priorityStructure) {
         if (ts.contains(o)) {
           return true;
@@ -155,7 +155,7 @@ public class PriorityCollection<T> implements Collection<T> {
         }
       }
     }
-    if(result){
+    if (result) {
       entryCount.decrementAndGet();
     }
     return result;
@@ -182,15 +182,14 @@ public class PriorityCollection<T> implements Collection<T> {
 
   @Override
   public boolean addAll(Collection<? extends T> rhsCollection) {
-    if(rhsCollection instanceof PriorityCollection){
+    if (rhsCollection instanceof PriorityCollection) {
       // Copy, but maintain the priority
-      PriorityCollection<T> priorityRhs = (PriorityCollection<T>)rhsCollection;
-      for(var x=0;x<priorityStructure.size();x++){
+      PriorityCollection<T> priorityRhs = (PriorityCollection<T>) rhsCollection;
+      for (var x = 0; x < priorityStructure.size(); x++) {
         Queue<T> lhs = priorityStructure.get(x);
         lhs.addAll(priorityRhs.priorityStructure.get(x));
       }
-    }
-    else {
+    } else {
       for (T entry : rhsCollection) {
         if (!add(entry)) {
           entryCount.set(size());
@@ -255,9 +254,9 @@ public class PriorityCollection<T> implements Collection<T> {
   public boolean retainAll(@NotNull Collection<?> c) {
     Iterator<?> itr = iterator();
     var changed = false;
-    while(itr.hasNext()){
+    while (itr.hasNext()) {
       Object val = itr.next();
-      if(!c.contains(val)){
+      if (!c.contains(val)) {
         itr.remove();
         changed = true;
       }
@@ -281,12 +280,16 @@ public class PriorityCollection<T> implements Collection<T> {
       throw new IllegalArgumentException("Supplied priority outside of defined bounds");
     }
     boolean ret = priorityStructure.get(priority).add(entry);
-    if(ret){
+    if (ret) {
       entryCount.incrementAndGet();
     }
     return ret;
   }
-  
+
+  protected void recalculateSize() {
+    entryCount.set(size());
+  }
+
   private class PriorityCollectionIterator implements Iterator<T> {
 
     private final List<Iterator<T>> iterators;
@@ -331,16 +334,11 @@ public class PriorityCollection<T> implements Collection<T> {
 
     @Override
     public void remove() {
-      if(active != null){
+      if (active != null) {
         active.remove();
-      }
-      else {
+      } else {
         throw new NoSuchElementException();
       }
     }
-  }
-
-  protected void recalculateSize(){
-    entryCount.set(size());
   }
 }

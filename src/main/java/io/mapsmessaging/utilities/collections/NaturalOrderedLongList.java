@@ -31,14 +31,15 @@ import java.util.function.IntFunction;
 
 public class NaturalOrderedLongList extends NaturalOrderedCollection implements List<Long> {
 
-  public NaturalOrderedLongList() {}
+  public NaturalOrderedLongList() {
+  }
 
   public NaturalOrderedLongList(long id, BitSetFactory factory) {
     super(id, factory);
   }
 
   @Override
-  public boolean addAll(int index, @NonNull @NotNull  Collection<? extends Long> c) {
+  public boolean addAll(int index, @NonNull @NotNull Collection<? extends Long> c) {
     return super.addAll(c);
   }
 
@@ -137,9 +138,9 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
 
     @Override
     public boolean hasPrevious() {
-      if(active == null){
-        if(iteratorIndex >= iterators.size()){
-          iteratorIndex = iterators.size() -1;
+      if (active == null) {
+        if (iteratorIndex >= iterators.size()) {
+          iteratorIndex = iterators.size() - 1;
         }
         active = iterators.get(iteratorIndex);
       }
@@ -195,6 +196,7 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
     public void forEachRemaining(Consumer<? super Long> action) {
       Objects.requireNonNull(action);
       while (hasNext())
-        action.accept(next());    }
+        action.accept(next());
+    }
   }
 }

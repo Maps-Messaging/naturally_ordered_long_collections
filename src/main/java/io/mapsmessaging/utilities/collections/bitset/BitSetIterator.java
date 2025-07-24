@@ -57,7 +57,7 @@ public class BitSetIterator implements Iterator<Integer> {
 
   @Override
   public void remove() {
-    if(active != -1){
+    if (active != -1) {
       bitSet.clear(active);
     }
   }

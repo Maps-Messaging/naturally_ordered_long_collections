@@ -30,7 +30,8 @@ import java.util.Queue;
 
 public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements Queue<Long> {
 
-  public NaturalOrderedLongQueue() {}
+  public NaturalOrderedLongQueue() {
+  }
 
   public NaturalOrderedLongQueue(long id, @NonNull @NotNull BitSetFactory factory) {
     super(id, factory);

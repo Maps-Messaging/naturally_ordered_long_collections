@@ -30,15 +30,14 @@ import java.util.Objects;
 public class DelegatingOffsetBitSet extends OffsetBitSet {
 
   @Getter
+  private final long uniqueId;
+  @Getter
   private OffsetBitSet delegate;
   @Getter
   private BitSetFactory bitSetFactory;
 
-  @Getter
-  private final long uniqueId;
 
-
-  public DelegatingOffsetBitSet(@NonNull OffsetBitSet initial, BitSetFactory bitSetFactory,  long uniqueId) {
+  public DelegatingOffsetBitSet(@NonNull OffsetBitSet initial, BitSetFactory bitSetFactory, long uniqueId) {
     super(initial.getBitSet(), initial.getStart()); // Establish bounds
     this.bitSetFactory = bitSetFactory;
     this.delegate = initial;
@@ -54,36 +53,118 @@ public class DelegatingOffsetBitSet extends OffsetBitSet {
     bitSetFactory.close(delegate);
   }
 
+  @Override
   public void releaseBitSet() {
     bitSetFactory.release(delegate);
   }
 
-  @Override public boolean set(long bit) { return delegate.set(bit); }
-  @Override public boolean clear(long bit) { return delegate.clear(bit); }
-  @Override public boolean isSet(long bit) { return delegate.isSet(bit); }
-  @Override public void flip(long bit) { delegate.flip(bit); }
-  @Override public void flip(long fromIndex, long toIndex) { delegate.flip(fromIndex, toIndex); }
-  @Override public int length() { return delegate.length(); }
-  @Override public boolean isEmpty() { return delegate.isEmpty(); }
-  @Override public int cardinality() { return delegate.cardinality(); }
-  @Override public long nextSetBit(long fromIndex) { return delegate.nextSetBit(fromIndex); }
-  @Override public long nextSetBitAndClear(long fromIndex) { return delegate.nextSetBitAndClear(fromIndex); }
-  @Override public long nextClearBit(long fromIndex) { return delegate.nextClearBit(fromIndex); }
-  @Override public long previousSetBit(long fromIndex) { return delegate.previousSetBit(fromIndex); }
-  @Override public long previousClearBit(long fromIndex) { return delegate.previousClearBit(fromIndex); }
+  @Override
+  public boolean set(long bit) {
+    return delegate.set(bit);
+  }
 
-  @Override public void and(BitSet map) { delegate.and(map); }
-  @Override public void or(BitSet map) { delegate.or(map); }
-  @Override public void xor(BitSet map) { delegate.xor(map); }
-  @Override public void andNot(BitSet map) { delegate.andNot(map); }
+  @Override
+  public boolean clear(long bit) {
+    return delegate.clear(bit);
+  }
 
-  @Override public void clear() { delegate.clear(); }
-  @Override public void clearAll() { delegate.clearAll(); }
+  @Override
+  public boolean isSet(long bit) {
+    return delegate.isSet(bit);
+  }
 
-  @Override public Iterator<Long> iterator() { return delegate.iterator(); }
-  @Override public ListIterator<Long> listIterator() { return delegate.listIterator(); }
+  @Override
+  public void flip(long bit) {
+    delegate.flip(bit);
+  }
 
-  @Override public void reset(long start, long uniqueId) {
+  @Override
+  public void flip(long fromIndex, long toIndex) {
+    delegate.flip(fromIndex, toIndex);
+  }
+
+  @Override
+  public int length() {
+    return delegate.length();
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return delegate.isEmpty();
+  }
+
+  @Override
+  public int cardinality() {
+    return delegate.cardinality();
+  }
+
+  @Override
+  public long nextSetBit(long fromIndex) {
+    return delegate.nextSetBit(fromIndex);
+  }
+
+  @Override
+  public long nextSetBitAndClear(long fromIndex) {
+    return delegate.nextSetBitAndClear(fromIndex);
+  }
+
+  @Override
+  public long nextClearBit(long fromIndex) {
+    return delegate.nextClearBit(fromIndex);
+  }
+
+  @Override
+  public long previousSetBit(long fromIndex) {
+    return delegate.previousSetBit(fromIndex);
+  }
+
+  @Override
+  public long previousClearBit(long fromIndex) {
+    return delegate.previousClearBit(fromIndex);
+  }
+
+  @Override
+  public void and(BitSet map) {
+    delegate.and(map);
+  }
+
+  @Override
+  public void or(BitSet map) {
+    delegate.or(map);
+  }
+
+  @Override
+  public void xor(BitSet map) {
+    delegate.xor(map);
+  }
+
+  @Override
+  public void andNot(BitSet map) {
+    delegate.andNot(map);
+  }
+
+  @Override
+  public void clear() {
+    delegate.clear();
+  }
+
+  @Override
+  public void clearAll() {
+    delegate.clearAll();
+  }
+
+  @Override
+  public Iterator<Long> iterator() {
+    return delegate.iterator();
+  }
+
+  @Override
+  public ListIterator<Long> listIterator() {
+    return delegate.listIterator();
+  }
+
+  @Override
+  public void reset(long start, long uniqueId) {
     delegate.reset(start, uniqueId);
     this.start = start;
     this.end = start + delegate.length();

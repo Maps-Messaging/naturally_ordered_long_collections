@@ -22,8 +22,8 @@
  * This package contains implementations of java.util lists, collections and queues that extend the features offered by the generic versions that
  * supply a unique, optimised implementation for the messaging server
  *
- * @since 1.0
  * @author Matthew Buckton
  * @version 1.0
+ * @since 1.0
  */
 package io.mapsmessaging.utilities.collections;

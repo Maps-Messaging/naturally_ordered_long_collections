@@ -53,12 +53,11 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   private final byte[] emptyBuffer;
   @Getter
   private final int shard;
-
+  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private RandomAccessFile raf;
   private boolean closed;
   private boolean deleted;
   private ScheduledFuture<?> deleteTask;
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
   public FileBitSetFactoryImpl(@NonNull @NotNull String filename, int size) throws IOException {
     this(filename, size, 0);
@@ -79,31 +78,20 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
       emptyBuffer[x] = 0;
     }
 
-    if(testFile.exists() && testFile.length() > 0) {
+    if (testFile.exists() && testFile.length() > 0) {
       raf = new RandomAccessFile(testFile, "rw");
       loadFile();
-      if(used.isEmpty()) {
+      if (used.isEmpty()) {
         deleteFiles();
       }
-    }
-    else{
+    } else {
       deleted = true; // Mark it as being active but file has been deleted, allowing first operation to create it
     }
   }
 
   @Override
-  public String toString(){
-    StringBuilder sb = new StringBuilder();
-    sb
-        .append("FileName:").append(filename).append("\n")
-        .append(" Size:").append(bufferSize).append("\n")
-        .append(" Free:").append(free.size()).append("\n")
-        .append(" Used:").append(used.size()).append("\n")
-        .append(" Closed:").append(closed).append("\n")
-        .append(" Deleted:").append(deleted).append("\n")
-        .append(" Shard:").append(shard).append("\n");
-
-    return sb.toString();
+  public String toString() {
+    return String.format("FileName:%s%n Size:%d%n Free:%d%n Used:%d%n Closed:%s%n Deleted:%s%n Shard:%d%n", filename, bufferSize, free.size(), used.size(), closed, deleted, shard);
   }
 
   private void loadFile() throws IOException {
@@ -133,22 +121,22 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public void close() throws IOException {
-    if(closed)return;
+    if (closed) return;
     closed = true;
     boolean delete = used.isEmpty();
     clearList(used);
     clearList(free);
-    if(raf != null && raf.getChannel().isOpen()) {
+    if (raf != null && raf.getChannel().isOpen()) {
       raf.close();
     }
-    if(delete){
+    if (delete) {
       deleteFiles();
     }
     scheduler.shutdownNow();
   }
 
   private synchronized void deleteFiles() throws IOException {
-    if(raf != null && raf.getChannel().isOpen() ){
+    if (raf != null && raf.getChannel().isOpen()) {
       clearList(used);
       clearList(free);
       raf.close();
@@ -167,7 +155,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   @Override
   public synchronized OffsetBitSet open(long uniqueId, long offset) throws IOException {
     checkState();
-    if(closed)throw new IllegalStateException ("BitSet file is closed");
+    if (closed) throw new IllegalStateException("BitSet file is closed");
     FileOffsetBitSet response;
     offset = getStartIndex(offset);
     if (free.isEmpty()) {
@@ -200,7 +188,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     used.remove(bitset);
     bitset.reset(0, -1);
     free.add((FileOffsetBitSet) bitset);
-    if(used.isEmpty()){
+    if (used.isEmpty()) {
       scheduleDelete();
     }
   }
@@ -208,11 +196,11 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public List<OffsetBitSet> get(long uniqueId) {
-    if(deleted){
+    if (deleted) {
       return new ArrayList<>(); // if the file is deleted, there are no bitsets, lets not open it
     }
     checkState();
-    if(uniqueId == -1){
+    if (uniqueId == -1) {
       return getList(free, uniqueId);
     }
     return getList(used, uniqueId);
@@ -220,7 +208,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public List<Long> getUniqueIds() {
-    if(deleted){
+    if (deleted) {
       return new ArrayList<>(); // if the file is deleted, there are no unique ids, lets not open it
     }
     checkState();
@@ -270,7 +258,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   private void clearList(@NonNull @NotNull List<FileOffsetBitSet> list) {
     for (FileOffsetBitSet bitmap : list) {
-      if(bitmap.isActive()) {
+      if (bitmap.isActive()) {
         ByteBufferBackedBitMap mapped = (ByteBufferBackedBitMap) bitmap.getBitSet();
         bitmap.releaseBitSet();
         unmap(mapped);
@@ -296,9 +284,9 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   }
 
   private synchronized void checkState() {
-    if(closed) throw new IllegalStateException("BitSet file is closed");
+    if (closed) throw new IllegalStateException("BitSet file is closed");
     if (deleteTask != null && !deleteTask.isDone()) deleteTask.cancel(false);
-    if(deleted) {
+    if (deleted) {
       reopen();
     }
   }

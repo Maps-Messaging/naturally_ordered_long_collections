@@ -59,7 +59,7 @@ class BitSetListIterator implements ListIterator<Integer> {
   @Override
   public boolean hasPrevious() {
     if (current >= 0) {
-      if(current >= active.length()){
+      if (current >= active.length()) {
         current--;
       }
       int previousSet = active.previousSetBit(current);
@@ -93,7 +93,7 @@ class BitSetListIterator implements ListIterator<Integer> {
 
   @Override
   public void remove() {
-    if(selected != -1) {
+    if (selected != -1) {
       active.clear(selected);
     }
   }

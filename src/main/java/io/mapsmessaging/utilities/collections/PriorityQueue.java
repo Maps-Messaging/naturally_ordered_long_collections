@@ -43,7 +43,7 @@ public class PriorityQueue<T> extends PriorityCollection<T> implements Queue<T> 
     super(priorityBound, factory);
   }
 
-  public PriorityQueue( @NonNull @NotNull Queue<T>[] priorityQueues, @Nullable PriorityFactory<T> factory) {
+  public PriorityQueue(@NonNull @NotNull Queue<T>[] priorityQueues, @Nullable PriorityFactory<T> factory) {
     super(priorityQueues, factory);
   }
 
@@ -92,9 +92,9 @@ public class PriorityQueue<T> extends PriorityCollection<T> implements Queue<T> 
   }
 
   // Returns the lowest priority object first. Useful to clean up the queue
-  public T last(){
-    for(Queue<T> priority:priorityStructure){
-      if(!priority.isEmpty()){
+  public T last() {
+    for (Queue<T> priority : priorityStructure) {
+      if (!priority.isEmpty()) {
         entryCount.decrementAndGet();
         return priority.poll();
       }

@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Iterator;
 import java.util.ListIterator;
 
+@SuppressWarnings(" javaarchitecture:S7027") // ByteBufferBackedBitMap is used here but only to access internal functions for speed
 @ToString
 public class BitSetImpl implements BitSet {
 
@@ -175,7 +176,7 @@ public class BitSetImpl implements BitSet {
   private void bitwiseCompute(@NonNull @NotNull ByteBufferBackedBitMap map, @NonNull @NotNull BitWiseOperator operator) {
     long[] longs = bitSet.toLongArray();
     int longCount = map.getLongCount();
-    if(longs.length < longCount){
+    if (longs.length < longCount) {
       var expand = new long[longCount];
       System.arraycopy(longs, 0, expand, 0, longs.length);
       longs = expand;

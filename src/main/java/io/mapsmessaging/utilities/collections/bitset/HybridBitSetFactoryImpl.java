@@ -50,7 +50,7 @@ public class HybridBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public synchronized void release(@NonNull OffsetBitSet bitset) {
-    if(bitset instanceof DelegatingOffsetBitSet) {
+    if (bitset instanceof DelegatingOffsetBitSet) {
       DelegatingOffsetBitSet delegating = (DelegatingOffsetBitSet) bitset;
       delegating.releaseBitSet();
       removeDelegate(delegating.getUniqueId(), delegating);
@@ -59,7 +59,7 @@ public class HybridBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public synchronized void close(@NonNull OffsetBitSet bitset) {
-    if(bitset instanceof DelegatingOffsetBitSet) {
+    if (bitset instanceof DelegatingOffsetBitSet) {
       DelegatingOffsetBitSet delegating = (DelegatingOffsetBitSet) bitset;
       delegating.closeBitSet();
       removeDelegate(delegating.getUniqueId(), delegating);
@@ -85,15 +85,14 @@ public class HybridBitSetFactoryImpl extends BitSetFactory {
   @Override
   public synchronized OffsetBitSet open(long uniqueId, long id) throws IOException {
     List<DelegatingOffsetBitSet> delegates = activeDelegates.computeIfAbsent(uniqueId, k -> new ArrayList<>());
-    if (delegates.size()  == threshold) {
+    if (delegates.size() == threshold) {
       migrateToDisk(uniqueId);
     }
 
     DelegatingOffsetBitSet wrapper;
-    if (delegates.size()  >= threshold) {
+    if (delegates.size() >= threshold) {
       return new DelegatingOffsetBitSet(fileFactory.open(uniqueId, id), fileFactory, uniqueId);
-    }
-    else{
+    } else {
       wrapper = new DelegatingOffsetBitSet(memoryFactory.open(uniqueId, id), memoryFactory, uniqueId);
     }
     delegates.add(wrapper);

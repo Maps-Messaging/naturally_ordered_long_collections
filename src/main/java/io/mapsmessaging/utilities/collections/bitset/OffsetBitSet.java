@@ -49,7 +49,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
     active = false;
   }
 
-  public void clear(){
+  public void clear() {
     ensureActive();
     rawBitSet.clear();
   }
@@ -142,7 +142,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   public void and(BitSet map) {
     ensureActive();
-   rawBitSet.and(map);
+    rawBitSet.and(map);
   }
 
   public void xor(BitSet map) {
@@ -185,7 +185,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   public ListIterator<Long> listIterator() {
     ensureActive();
-   return new OffsetBitSetListIterator();
+    return new OffsetBitSetListIterator();
   }
 
   @Override

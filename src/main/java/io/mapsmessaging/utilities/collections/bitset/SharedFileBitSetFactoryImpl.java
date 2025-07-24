@@ -35,7 +35,7 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
 
   public SharedFileBitSetFactoryImpl(@NonNull String baseFilename, int shardCount, int windowSize) throws IOException {
     super(windowSize);
-    if(shardCount <= 0){
+    if (shardCount <= 0) {
       throw new IllegalArgumentException("shardCount must be greater than 0");
     }
     this.shardCount = shardCount;
@@ -53,9 +53,9 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
   }
 
   @Override
-  public String toString(){
+  public String toString() {
     StringBuilder sb = new StringBuilder();
-    for(FileBitSetFactoryImpl f : shards){
+    for (FileBitSetFactoryImpl f : shards) {
       sb.append(f.toString()).append("\n");
     }
     return sb.toString();
@@ -63,7 +63,7 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public List<OffsetBitSet> get(long uniqueId) {
-    if(uniqueId < 0){
+    if (uniqueId < 0) {
       List<OffsetBitSet> bitSets = new ArrayList<>();
       for (var shard : shards) {
         bitSets.addAll(shard.get(-1));
@@ -103,7 +103,7 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public void delete() throws IOException {
-    for(var shard : shards){
+    for (var shard : shards) {
       shard.delete();
     }
   }
@@ -115,7 +115,7 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
         List<OffsetBitSet> bitSets = shard.get(uniqueId);
         for (OffsetBitSet bitSet : bitSets) {
           Iterator<Long> iterator = bitSet.iterator();
-          while(iterator.hasNext()){
+          while (iterator.hasNext()) {
             result.add(iterator.next());
           }
         }

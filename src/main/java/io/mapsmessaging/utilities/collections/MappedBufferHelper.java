@@ -39,11 +39,15 @@ import java.nio.ByteBuffer;
  * I am hopeful in some future version of the JDK this is addressed
  * </b>
  *
- * @since 1.0
  * @author Matthew Buckton
  * @version 1.0
+ * @since 1.0
  */
 public class MappedBufferHelper {
+
+  private MappedBufferHelper() {
+    // Nothing to do here
+  }
 
   /**
    * Ensures the ByteBuffer is a direct buffer and then ensures the "cleaner" function is run and, thus, freeing up any resources it may have open.
@@ -83,9 +87,5 @@ public class MappedBufferHelper {
     theUnsafeField.setAccessible(true);
     Object theUnsafe = theUnsafeField.get(null);
     clean.invoke(theUnsafe, cb);
-  }
-
-  private MappedBufferHelper(){
-    // Nothing to do here
   }
 }
