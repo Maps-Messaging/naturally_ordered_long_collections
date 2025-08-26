@@ -1,27 +1,30 @@
 /*
  *
- *   Copyright [ 2020 - 2021 ] [Matthew Buckton]
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  *
  */
 
 package io.mapsmessaging.utilities.collections;
 
-import java.util.NoSuchElementException;
-import java.util.Queue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.NoSuchElementException;
+import java.util.Queue;
 
 public abstract class PriorityQueueTest  {
 
@@ -116,6 +119,35 @@ public abstract class PriorityQueueTest  {
       alternateDrainMethods(values[0], values[1]);
     }
   }
+
+  @Test
+  public void testRemoveAndGetPriorityValid() {
+    int priorities = 4;
+    PriorityQueue<TestData> queue = createQueue(priorities);
+    TestData entry = new TestData(42, 2);
+    queue.offer(entry);
+
+    int returnedPriority = queue.removeAndGetPriority(entry);
+
+    Assertions.assertEquals(2, returnedPriority);
+    Assertions.assertEquals(0, queue.size());
+  }
+  @Test
+  public void testRemoveAndGetPriorityInvalid() {
+    int priorities = 4;
+    PriorityQueue<TestData> queue = createQueue(priorities);
+    TestData existing = new TestData(42, 1);
+    TestData nonExistent = new TestData(99, 3);
+
+    queue.offer(existing);
+
+    int result = queue.removeAndGetPriority(nonExistent);
+
+    Assertions.assertEquals(-1, result);
+    Assertions.assertEquals(1, queue.size());
+  }
+
+
 
   private void alternateDrainMethods(int entries, int priorities) {
     PriorityQueue<TestData> priorityQueue = createAndInsert(entries, priorities);

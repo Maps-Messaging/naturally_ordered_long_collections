@@ -1,27 +1,30 @@
 /*
  *
- *   Copyright [ 2020 - 2021 ] [Matthew Buckton]
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  *
  */
 
 package io.mapsmessaging.utilities.collections.bitset;
 
-import java.util.Iterator;
-import java.util.ListIterator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.Iterator;
+import java.util.ListIterator;
 
 public abstract class OffsetBitSetTest {
 
@@ -170,6 +173,36 @@ public abstract class OffsetBitSetTest {
       Assertions.assertFalse(bitmap.isSet(x));
     }
   }
+
+  @Test
+  void testFlipRange() {
+    OffsetBitSet bitmap = createOffsetBitset(0);
+    int bits = bitmap.length();
+
+    // Initially all false
+    for (int i = 0; i < bits; i++) {
+      Assertions.assertFalse(bitmap.isSet(i));
+    }
+
+    // Flip a range
+    bitmap.flip(10, 20);
+
+    for (int i = 0; i < bits; i++) {
+      if (i >= 10 && i < 20) {
+        Assertions.assertTrue(bitmap.isSet(i), "Expected bit " + i + " to be set");
+      } else {
+        Assertions.assertFalse(bitmap.isSet(i), "Expected bit " + i + " to be clear");
+      }
+    }
+
+    // Flip again, should clear
+    bitmap.flip(10, 20);
+
+    for (int i = 0; i < bits; i++) {
+      Assertions.assertFalse(bitmap.isSet(i), "Expected bit " + i + " to be clear after second flip");
+    }
+  }
+
 
   @Test
   public void testRangedFlipping(){

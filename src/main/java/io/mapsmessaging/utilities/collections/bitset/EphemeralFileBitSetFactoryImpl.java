@@ -18,20 +18,26 @@
  *
  */
 
-package io.mapsmessaging.utilities.collections;
+package io.mapsmessaging.utilities.collections.bitset;
 
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
+import lombok.NonNull;
+import org.jetbrains.annotations.NotNull;
 
-public class ExternalPriorityQueueTest extends PriorityQueueTest{
+import java.io.File;
+import java.io.IOException;
+
+public class EphemeralFileBitSetFactoryImpl extends FileBitSetFactoryImpl {
+
+
+  public EphemeralFileBitSetFactoryImpl(@NonNull @NotNull String filename, int size) throws IOException {
+    super(filename, size);
+  }
 
   @Override
-  public PriorityQueue<TestData> createQueue(int priorities) {
-    Queue<TestData>[] external = new Queue[priorities];
-    for(int x=0;x<priorities;x++){
-      external[x] = new LinkedBlockingQueue<>();
-    }
-    TestDataPriorityFactory factory = new TestDataPriorityFactory();
-    return new PriorityQueue<>(external,factory);
+  protected File prepareBackingFile(@NonNull String filename) throws IOException {
+    File file = super.prepareBackingFile(filename);
+    file.deleteOnExit();
+    return file;
   }
+
 }

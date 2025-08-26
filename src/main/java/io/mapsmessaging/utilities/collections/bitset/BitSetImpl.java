@@ -1,18 +1,20 @@
 /*
  *
- *   Copyright [ 2020 - 2021 ] [Matthew Buckton]
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  *
  */
 
@@ -22,12 +24,14 @@ import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.And;
 import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.AndNot;
 import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.Or;
 import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.Xor;
-import java.util.Iterator;
-import java.util.ListIterator;
 import lombok.NonNull;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Iterator;
+import java.util.ListIterator;
+
+@SuppressWarnings("squid:S7027") // ByteBufferBackedBitMap is used here but only to access internal functions for speed
 @ToString
 public class BitSetImpl implements BitSet {
 
@@ -172,7 +176,7 @@ public class BitSetImpl implements BitSet {
   private void bitwiseCompute(@NonNull @NotNull ByteBufferBackedBitMap map, @NonNull @NotNull BitWiseOperator operator) {
     long[] longs = bitSet.toLongArray();
     int longCount = map.getLongCount();
-    if(longs.length < longCount){
+    if (longs.length < longCount) {
       var expand = new long[longCount];
       System.arraycopy(longs, 0, expand, 0, longs.length);
       longs = expand;

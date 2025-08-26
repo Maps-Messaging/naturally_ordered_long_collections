@@ -20,18 +20,13 @@
 
 package io.mapsmessaging.utilities.collections;
 
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
+import io.mapsmessaging.utilities.collections.bitset.SharedFileBitSetFactoryImpl;
 
-public class ExternalPriorityQueueTest extends PriorityQueueTest{
+import java.io.IOException;
 
+public class SharedFileBitSetFactoryImplTest extends BaseSharedFileBitSetFactoryImplTest{
   @Override
-  public PriorityQueue<TestData> createQueue(int priorities) {
-    Queue<TestData>[] external = new Queue[priorities];
-    for(int x=0;x<priorities;x++){
-      external[x] = new LinkedBlockingQueue<>();
-    }
-    TestDataPriorityFactory factory = new TestDataPriorityFactory();
-    return new PriorityQueue<>(external,factory);
+  protected SharedFileBitSetFactoryImpl buildFactory() throws IOException {
+    return new SharedFileBitSetFactoryImpl(BASE_FILENAME, SHARD_COUNT, WINDOW_SIZE);
   }
 }

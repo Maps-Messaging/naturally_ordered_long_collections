@@ -1,18 +1,20 @@
 /*
  *
- *   Copyright [ 2020 - 2021 ] [Matthew Buckton]
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  *
  */
 
@@ -22,12 +24,16 @@ import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.And;
 import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.AndNot;
 import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.Or;
 import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.Xor;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
+
 import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.ListIterator;
-import lombok.NonNull;
-import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("squid:S7027")
 public class ByteBufferBackedBitMap implements BitSet {
 
   private static final long LONG_MASK = 0xffffffffffffffffL;
@@ -42,6 +48,8 @@ public class ByteBufferBackedBitMap implements BitSet {
   private final int offset;
 
   private ByteBuffer backing;
+  @Setter
+  @Getter
   private long uniqueId;
 
   // <editor-fold desc="BitSet constructors">
@@ -76,13 +84,6 @@ public class ByteBufferBackedBitMap implements BitSet {
     return offset;
   }
 
-  public long getUniqueId() {
-    return uniqueId;
-  }
-
-  public void setUniqueId(long uniqueId) {
-    this.uniqueId = uniqueId;
-  }
   // </editor-fold>
 
   // <editor-fold desc="Single bit operations">
@@ -181,8 +182,12 @@ public class ByteBufferBackedBitMap implements BitSet {
     int startWordIndex = getLongPosition(fromOffset);
     int endWordIndex = getLongPosition(toOffset - 1);
 
-    long firstWordMask = LONG_MASK << fromOffset;
-    long lastWordMask = LONG_MASK >>> -toOffset;
+    int startBit = fromOffset % LONG_BITS;
+    int endBit = (toOffset - 1) % LONG_BITS;
+
+    long firstWordMask = LONG_MASK << startBit;
+    long lastWordMask = LONG_MASK >>> (63 - endBit); // avoid negative shift
+
     if (startWordIndex == endWordIndex) {
       // Case 1: One word
       var map = backing.getLong(startWordIndex);
@@ -203,7 +208,7 @@ public class ByteBufferBackedBitMap implements BitSet {
       }
       map = backing.getLong(endWordIndex);
       map ^= (lastWordMask);
-      backing.putLong(startWordIndex, map);
+      backing.putLong(endWordIndex, map);
     }
   }
   // </editor-fold>
@@ -251,7 +256,7 @@ public class ByteBufferBackedBitMap implements BitSet {
   // <editor-fold desc="Search Functions">
   @Override
   public int nextSetBit(int fromIndex) {
-    if (fromIndex < 0 || fromIndex >= capacity){
+    if (fromIndex < 0 || fromIndex >= capacity) {
       return -1;
     }
 
@@ -322,12 +327,13 @@ public class ByteBufferBackedBitMap implements BitSet {
 
   @Override
   public int previousSetBit(int fromIndex) {
-    if (fromIndex < 0 || fromIndex >= capacity){
+    if (fromIndex < 0 || fromIndex >= capacity) {
       return -1;
     }
     var internalBit = checkBoundary(fromIndex);
     int position = getLongPosition(internalBit);
-    long word = backing.getLong(position) & (LONG_MASK >>> -((fromIndex + 1)%64));
+    int bitPos = (fromIndex + 1) % LONG_BITS;
+    long word = backing.getLong(position) & (LONG_MASK >>> (LONG_BITS - bitPos));
 
     while (true) {
       if (word != 0) {
@@ -441,7 +447,7 @@ public class ByteBufferBackedBitMap implements BitSet {
       }
     } else {
       throw new UnsupportedOperationException(
-          "Unable to perform bitwise operation from " + test.getClass().toString());
+          "Unable to perform bitwise operation from " + test.getClass());
     }
   }
 
@@ -455,7 +461,7 @@ public class ByteBufferBackedBitMap implements BitSet {
     //
     // Must be within range
     //
-    if (bit < 0 || bit > capacity) {
+    if (bit < 0 || bit >= capacity) {
       throw new IndexOutOfBoundsException("Expecting range from 0 to " + (capacity) + " received " + bit);
     }
     return bit;

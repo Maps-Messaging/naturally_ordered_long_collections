@@ -1,18 +1,20 @@
 /*
  *
- *   Copyright [ 2020 - 2021 ] [Matthew Buckton]
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  *
  */
 
@@ -37,14 +39,14 @@ public class NaturalOrderedCollection implements Collection<Long> {
   private final int size;
 
   @Getter
-  private final int uniqueId;
+  private final long uniqueId;
 
 
   public NaturalOrderedCollection() {
     this(0, new BitSetFactoryImpl(8192));
   }
 
-  public NaturalOrderedCollection(int id, @NonNull BitSetFactory factory) {
+  public NaturalOrderedCollection(long id, @NonNull BitSetFactory factory) {
     tree = new TreeMap<>(new OffsetBitSetComparator());
     this.factory = factory;
     this.size = factory.getSize();
@@ -98,9 +100,9 @@ public class NaturalOrderedCollection implements Collection<Long> {
   public Object[] toArray() {
     Collection<OffsetBitSet> bitsets = tree.values();
     List<Long> response = new ArrayList<>();
-    for(OffsetBitSet bitSet:bitsets){
+    for (OffsetBitSet bitSet : bitsets) {
       Iterator<Long> itr = bitSet.iterator();
-      while(itr.hasNext()){
+      while (itr.hasNext()) {
         response.add(itr.next());
       }
     }
@@ -161,9 +163,11 @@ public class NaturalOrderedCollection implements Collection<Long> {
           tree.remove(active.getStart());
           factory.release(active);
         }
+        validateTree();
         return result;
       }
     }
+    validateTree();
     return false;
   }
 
@@ -185,27 +189,33 @@ public class NaturalOrderedCollection implements Collection<Long> {
   @Override
   public boolean addAll(@NonNull @NotNull Collection<? extends Long> c) {
     if (isMatching(c)) {
-      NaturalOrderedCollection rhs = (NaturalOrderedCollection)c;
-      Collection<OffsetBitSet> bitsets = rhs.tree.values();
-      for(OffsetBitSet toAddBitset:bitsets){
-        OffsetBitSet copy = tree.get(toAddBitset.getStart());
-        if(copy == null){
-          try {
-            copy = factory.open(uniqueId, toAddBitset.getStart());
-            tree.put(copy.getStart(), copy);
-          } catch (IOException e) {
-            throw new IORunTimeException("Fatal error opening new bitset, unable to continue", e);
-          }
-        }
-        copy.getBitSet().or(toAddBitset.getBitSet());
-      }
-    }
-    else {
+      internalAddAll((NaturalOrderedCollection) c);
+    } else {
       for (long value : c) {
         add(value);
       }
     }
     return true;
+  }
+
+  private void internalAddAll(NaturalOrderedCollection rhs) {
+    Collection<OffsetBitSet> bitsets = rhs.tree.values();
+    for (OffsetBitSet toAddBitset : bitsets) {
+      if (!toAddBitset.isActive()) {
+        tree.remove(toAddBitset.getStart());
+        continue;
+      }
+      OffsetBitSet copy = tree.get(toAddBitset.getStart());
+      if (copy == null) {
+        try {
+          copy = factory.open(uniqueId, toAddBitset.getStart());
+          tree.put(copy.getStart(), copy);
+        } catch (IOException e) {
+          throw new IORunTimeException("Fatal error opening new bitset, unable to continue", e);
+        }
+      }
+      copy.getBitSet().or(toAddBitset.getBitSet());
+    }
   }
 
   @Override
@@ -217,31 +227,34 @@ public class NaturalOrderedCollection implements Collection<Long> {
         OffsetBitSet copy = tree.get(toRemove.getStart());
         if (copy != null) {
           copy.getBitSet().andNot(toRemove.getBitSet());
-          if(copy.isEmpty()){
+          if (copy.isEmpty()) {
             tree.remove(copy.getStart());
             factory.release(copy);
           }
         }
       }
-    }
-    else {
+    } else {
       for (Object value : c) {
         remove(value);
       }
     }
+    validateTree();
     return true;
   }
 
   @Override
   public boolean removeIf(Predicate<? super Long> filter) {
+    boolean res = false;
     Objects.requireNonNull(filter);
     Iterator<Long> itr = new LongIterator();
     while (itr.hasNext()) {
       if (filter.test(itr.next())) {
         itr.remove();
+        res = true;
       }
     }
-    return false;
+    validateTree();
+    return res;
   }
 
   @Override
@@ -249,14 +262,13 @@ public class NaturalOrderedCollection implements Collection<Long> {
     var changed = false;
     if (isMatching(c)) {
       changed = matchingRetainAll(c);
-    }
-    else {
+    } else {
       changed = nonMatchingRetainAll(c);
     }
     return changed;
   }
 
-  private boolean nonMatchingRetainAll(Collection<?> c){
+  private boolean nonMatchingRetainAll(Collection<?> c) {
     boolean changed = false;
     Iterator<Long> itr = this.iterator();
     while (itr.hasNext()) {
@@ -266,10 +278,12 @@ public class NaturalOrderedCollection implements Collection<Long> {
         changed = true;
       }
     }
+    validateTree();
+
     return changed;
   }
 
-  private boolean matchingRetainAll(Collection<?> c){
+  private boolean matchingRetainAll(Collection<?> c) {
     boolean changed = false;
     NaturalOrderedCollection rhs = (NaturalOrderedCollection) c;
     Collection<OffsetBitSet> bitsets = rhs.tree.values();
@@ -278,31 +292,46 @@ public class NaturalOrderedCollection implements Collection<Long> {
       if (copy != null) {
         int original = copy.cardinality();
         copy.getBitSet().and(toRetain.getBitSet());
-        if(copy.isEmpty()){
+        if (copy.isEmpty()) {
           tree.remove(copy.getStart());
           factory.release(copy);
-        }
-        else{
+        } else {
           changed = original != copy.cardinality() || changed;
         }
       }
     }
+    validateTree();
+
     return changed;
   }
 
   @Override
   public void clear() {
+    validateTree();
     for (OffsetBitSet bitMap : tree.values()) {
       bitMap.clearAll();
+      factory.release(bitMap);
+    }
+    tree.clear();
+  }
+
+  private void validateTree() {
+    Iterator<Map.Entry<Long, OffsetBitSet>> iterator = tree.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<Long, OffsetBitSet> entry = iterator.next();
+      OffsetBitSet bitSet = entry.getValue();
+      if (!bitSet.isActive()) {
+        iterator.remove();
+      }
     }
   }
 
   public String toString() {
-    return "size = " + size();
+    return "Tree:" + tree.toString() + " size = " + size();
   }
 
-  protected boolean isMatching(Collection<?> c){
-    return (c instanceof NaturalOrderedCollection && ((NaturalOrderedCollection)c).factory.getSize() == factory.getSize());
+  protected boolean isMatching(Collection<?> c) {
+    return (c instanceof NaturalOrderedCollection && ((NaturalOrderedCollection) c).factory.getSize() == factory.getSize());
   }
 
   // </editor-fold>
@@ -311,6 +340,12 @@ public class NaturalOrderedCollection implements Collection<Long> {
     @Override
     public int compare(Long o1, Long o2) {
       return Long.compare(o1, o2);
+    }
+  }
+
+  public static final class IORunTimeException extends RuntimeException {
+    public IORunTimeException(String s, IOException e) {
+      super(s, e);
     }
   }
 
@@ -363,12 +398,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
       while (hasNext()) {
         action.accept(next());
       }
-    }
-  }
-
-  public static final class IORunTimeException extends RuntimeException{
-    public IORunTimeException(String s, IOException e) {
-      super(s, e);
     }
   }
 }

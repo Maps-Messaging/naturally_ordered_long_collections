@@ -1,4 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~
+  ~  Copyright [ 2020 - 2024 ] Matthew Buckton
+  ~  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+  ~
+  ~  Licensed under the Apache License, Version 2.0 with the Commons Clause
+  ~  (the "License"); you may not use this file except in compliance with the License.
+  ~  You may obtain a copy of the License at:
+  ~
+  ~      http://www.apache.org/licenses/LICENSE-2.0
+  ~      https://commonsclause.com/
+  ~
+  ~  Unless required by applicable law or agreed to in writing, software
+  ~  distributed under the License is distributed on an "AS IS" BASIS,
+  ~  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~  See the License for the specific language governing permissions and
+  ~  limitations under the License.
+  ~
+  -->
+
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns="http://maven.apache.org/POM/4.0.0"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -6,7 +26,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.mapsmessaging</groupId>
   <artifactId>naturally_ordered_long_collections</artifactId>
-  <version>1.1.9</version>
+  <version>1.1.10-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>Naturally Ordered Long Collections</name>
@@ -15,37 +35,43 @@
 
   <developers>
     <developer>
-      <id>mbuckton</id>
-      <name>Matthew Buckton</name>
-      <organization>Maps Messaging</organization>
-      <organizationUrl>http://mapsmessaging.io/</organizationUrl>
+      <id>mapsmessaging</id>
+      <name>MapsMessaging B.V.</name>
+      <organization>MapsMessaging B.V.</organization>
+      <organizationUrl>https://mapsmessaging.io/</organizationUrl>
       <roles>
-        <role>founder</role>
+        <role>developer</role>
+        <role>maintainer</role>
       </roles>
-      <timezone>Australia/Sydney</timezone>
+      <timezone>Europe/Amsterdam</timezone>
+      <properties>
+        <location>Eindhoven, Netherlands</location>
+      </properties>
     </developer>
   </developers>
 
   <licenses>
     <license>
+      <name>Apache License 2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0</url>
       <distribution>repo</distribution>
-      <name>Mozilla Public License Version 2.0</name>
-      <url>https://www.mozilla.org/en-US/MPL/2.0/</url>
+      <comments>Restricted by Commons Clause: https://commonsclause.com/</comments>
     </license>
     <license>
-      <distribution>repo</distribution>
-      <name>CommonsClause</name>
+      <name>Commons Clause License Condition v1.0</name>
       <url>https://commonsclause.com/</url>
+      <distribution>repo</distribution>
+      <comments>Applied in conjunction with Apache 2.0 to restrict commercial sale</comments>
     </license>
   </licenses>
-
   <scm>
     <url>https://github.com/Maps-Messaging/naturally_ordered_long_collections.git</url>
   </scm>
 
   <properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
+    <nvd.api.key>${env.NVD_API_KEY}</nvd.api.key>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <gpg.keyname>matthew.buckton@mapsmessaging.io</gpg.keyname>
 
@@ -68,35 +94,23 @@
 
     <sonar.sources>src/main</sonar.sources>
     <sonar.test.exclusions>
-      **/*Test.*,**/*IT.*, **.*JMH.*
+      **/*Test.*,**/*IT.*,  **/*JMH.*
     </sonar.test.exclusions>
   </properties>
 
-
   <profiles>
     <profile>
-      <!-- Default profile for regular releases -->
       <id>release</id>
-      <distributionManagement>
-        <repository>
-          <id>ossrh</id>
-          <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-          <snapshots>
-            <enabled>false</enabled>
-          </snapshots>
-        </repository>
-      </distributionManagement>
       <build>
         <plugins>
           <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <version>1.6.13</version>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>0.8.0</version>
             <extensions>true</extensions>
             <configuration>
-              <serverId>mapsmessaging.io</serverId>
-              <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-              <autoReleaseAfterClose>true</autoReleaseAfterClose>
+              <publishingServerId>central</publishingServerId>
+              <autoPublish>true</autoPublish>
             </configuration>
           </plugin>
         </plugins>
@@ -104,17 +118,12 @@
     </profile>
   </profiles>
 
-
   <distributionManagement>
     <snapshotRepository>
       <id>maps_snapshots</id>
       <name>maps_snapshot_repository</name>
-      <url>https://repository.mapsmessaging.io:8081/repository/maps_snapshots/</url>
+      <url>https://repository.mapsmessaging.io/repository/maps_snapshots/</url>
     </snapshotRepository>
-    <repository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
   </distributionManagement>
 
   <build>
@@ -122,7 +131,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-gpg-plugin</artifactId>
-        <version>3.1.0</version>
+        <version>3.2.7</version>
         <executions>
           <execution>
             <id>sign-artifacts</id>
@@ -150,7 +159,7 @@
           <target>11</target>
         </configuration>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.12.1</version>
+        <version>3.13.0</version>
       </plugin>
 
       <!-- Setup code coverage by jacoco for our tests -->
@@ -160,6 +169,7 @@
           <excludes>
             <!-- test code, lets not track the testing -->
             <exclude>**/*Test.*</exclude>
+            <exclude>**/*JMH.*</exclude>
           </excludes>
         </configuration>
         <executions>
@@ -178,7 +188,7 @@
           </execution>
         </executions>
         <groupId>org.jacoco</groupId>
-        <version>0.8.11</version>
+        <version>0.8.12</version>
       </plugin>
 
       <!-- Setup the JUnit tests runner -->
@@ -192,19 +202,34 @@
           </includes>
         </configuration>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.2.5</version>
+        <version>3.5.2</version>
       </plugin>
 
       <!-- build the source jar as well -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>3.3.0</version>
+        <version>3.3.1</version>
         <executions>
           <execution>
             <id>attach-sources</id>
             <goals>
               <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- sBOM  generator -->
+      <plugin>
+        <groupId>org.cyclonedx</groupId>
+        <artifactId>cyclonedx-maven-plugin</artifactId>
+        <version>2.9.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>makeAggregateBom</goal>
             </goals>
           </execution>
         </executions>
@@ -217,7 +242,7 @@
           <charset>UTF-8</charset>
           <encoding>UTF-8</encoding>
           <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
-          <reportOutputDirectory>${project.build.directory}/site/docs</reportOutputDirectory>
+          <outputDirectory>${project.build.directory}/site/docs</outputDirectory>
           <show>public</show>
         </configuration>
         <executions>
@@ -229,8 +254,28 @@
           </execution>
         </executions>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.6.3</version>
+        <version>3.11.2</version>
       </plugin>
+      <plugin>
+        <groupId>org.owasp</groupId>
+        <artifactId>dependency-check-maven</artifactId>
+        <version>12.0.1</version>
+        <configuration>
+          <nvdApiKey>${nvd.api.key}</nvdApiKey>
+          <failBuildOnCVSS>10</failBuildOnCVSS>
+          <failOnError>false</failOnError>
+          <skipArtifactType>test-jar</skipArtifactType>
+          <skipTestScope>true</skipTestScope>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
 
@@ -240,7 +285,7 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
-      <version>5.10.2</version>
+      <version>5.11.4</version>
     </dependency>
 
     <!-- Java micro benchmarking -->
@@ -262,18 +307,21 @@
     <dependency>
       <artifactId>annotations</artifactId>
       <groupId>org.jetbrains</groupId>
-      <version>24.1.0</version>
+      <version>26.0.1</version>
     </dependency>
 
     <dependency>
       <artifactId>lombok</artifactId>
       <groupId>org.projectlombok</groupId>
-      <version>1.18.30</version>
+      <version>1.18.36</version>
+      <scope>provided</scope>
     </dependency>
+
     <dependency>
-      <artifactId>jsr305</artifactId>
-      <groupId>com.google.code.findbugs</groupId>
-      <version>3.0.2</version>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <version>5.12.0</version>
+      <scope>test</scope>
     </dependency>
 
   </dependencies>

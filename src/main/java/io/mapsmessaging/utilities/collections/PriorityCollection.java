@@ -1,42 +1,40 @@
 /*
  *
- *   Copyright [ 2020 - 2021 ] [Matthew Buckton]
+ *  Copyright [ 2020 - 2024 ] Matthew Buckton
+ *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
  *
- *   Licensed under the Apache License, Version 2.0 (the "License");
- *   you may not use this file except in compliance with the License.
- *   You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 with the Commons Clause
+ *  (the "License"); you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at:
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://commonsclause.com/
  *
- *   Unless required by applicable law or agreed to in writing, software
- *   distributed under the License is distributed on an "AS IS" BASIS,
- *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *   See the License for the specific language governing permissions and
- *   limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  *
  */
 
 package io.mapsmessaging.utilities.collections;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Queue;
-import java.util.concurrent.atomic.AtomicLong;
+import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+
 public class PriorityCollection<T> implements Collection<T> {
 
+  protected final AtomicLong entryCount;
+  @Getter
   final List<Queue<T>> priorityStructure;
   final int prioritySize;
   final PriorityFactory<T> priorityFactory;
-  protected final AtomicLong entryCount;
 
   public PriorityCollection(int priorityBound, @Nullable PriorityFactory<T> factory) {
     if (priorityBound <= 0) {
@@ -48,7 +46,7 @@ public class PriorityCollection<T> implements Collection<T> {
     for (var x = 0; x < priorityBound; x++) {
       priorityStructure.add(new LinkedList<>());
     }
-    entryCount=new AtomicLong(0);
+    entryCount = new AtomicLong(0);
   }
 
   public PriorityCollection(Queue<T>[] priorityQueues, @Nullable PriorityFactory<T> factory) {
@@ -59,7 +57,7 @@ public class PriorityCollection<T> implements Collection<T> {
     prioritySize = priorityQueues.length;
     priorityFactory = factory;
     priorityStructure.addAll(Arrays.asList(priorityQueues).subList(0, prioritySize));
-    entryCount=new AtomicLong(0);
+    entryCount = new AtomicLong(0);
   }
 
   public void close() {
@@ -72,26 +70,22 @@ public class PriorityCollection<T> implements Collection<T> {
     entryCount.set(0);
   }
 
-  public Queue<T> flatten (Queue<T> flattenQueue){
+  public Queue<T> flatten(Queue<T> flattenQueue) {
     for (Queue<T> queue : priorityStructure) {
       flattenQueue.addAll(queue);
     }
     return flattenQueue;
   }
 
-  public String toString(){
+  public String toString() {
     var sb = new StringBuilder("Count:");
     sb.append(entryCount).append(",");
     for (Queue<T> queue : priorityStructure) {
-      if(!queue.isEmpty()) {
-        sb.append(queue.toString()).append("\n");
+      if (!queue.isEmpty()) {
+        sb.append(queue).append("\n");
       }
     }
     return sb.toString();
-  }
-
-  public List<Queue<T>> getPriorityStructure() {
-    return priorityStructure;
   }
 
   public boolean isEmpty() {
@@ -100,7 +94,7 @@ public class PriorityCollection<T> implements Collection<T> {
 
   @Override
   public boolean contains(Object o) {
-    if(entryCount.get() != 0) {
+    if (entryCount.get() != 0) {
       for (Queue<T> ts : priorityStructure) {
         if (ts.contains(o)) {
           return true;
@@ -133,6 +127,7 @@ public class PriorityCollection<T> implements Collection<T> {
         size += ts.size();
       }
     }
+    entryCount.set(size);
     return size;
   }
 
@@ -160,23 +155,41 @@ public class PriorityCollection<T> implements Collection<T> {
         }
       }
     }
-    if(result){
+    if (result) {
       entryCount.decrementAndGet();
     }
     return result;
   }
 
+  public int removeAndGetPriority(T entry) {
+    if (priorityFactory != null) {
+      int priority = priorityFactory.getPriority(entry);
+      if (priorityStructure.get(priority).remove(entry)) {
+        entryCount.decrementAndGet();
+        return priority;
+      }
+    } else {
+      for (int i = 0; i < priorityStructure.size(); i++) {
+        if (priorityStructure.get(i).remove(entry)) {
+          entryCount.decrementAndGet();
+          return i;
+        }
+      }
+    }
+    return -1;
+  }
+
+
   @Override
   public boolean addAll(Collection<? extends T> rhsCollection) {
-    if(rhsCollection instanceof PriorityCollection){
+    if (rhsCollection instanceof PriorityCollection) {
       // Copy, but maintain the priority
-      PriorityCollection<T> priorityRhs = (PriorityCollection<T>)rhsCollection;
-      for(var x=0;x<priorityStructure.size();x++){
+      PriorityCollection<T> priorityRhs = (PriorityCollection<T>) rhsCollection;
+      for (var x = 0; x < priorityStructure.size(); x++) {
         Queue<T> lhs = priorityStructure.get(x);
         lhs.addAll(priorityRhs.priorityStructure.get(x));
       }
-    }
-    else {
+    } else {
       for (T entry : rhsCollection) {
         if (!add(entry)) {
           entryCount.set(size());
@@ -241,9 +254,9 @@ public class PriorityCollection<T> implements Collection<T> {
   public boolean retainAll(@NotNull Collection<?> c) {
     Iterator<?> itr = iterator();
     var changed = false;
-    while(itr.hasNext()){
+    while (itr.hasNext()) {
       Object val = itr.next();
-      if(!c.contains(val)){
+      if (!c.contains(val)) {
         itr.remove();
         changed = true;
       }
@@ -267,12 +280,16 @@ public class PriorityCollection<T> implements Collection<T> {
       throw new IllegalArgumentException("Supplied priority outside of defined bounds");
     }
     boolean ret = priorityStructure.get(priority).add(entry);
-    if(ret){
+    if (ret) {
       entryCount.incrementAndGet();
     }
     return ret;
   }
-  
+
+  protected void recalculateSize() {
+    entryCount.set(size());
+  }
+
   private class PriorityCollectionIterator implements Iterator<T> {
 
     private final List<Iterator<T>> iterators;
@@ -317,16 +334,11 @@ public class PriorityCollection<T> implements Collection<T> {
 
     @Override
     public void remove() {
-      if(active != null){
+      if (active != null) {
         active.remove();
-      }
-      else {
+      } else {
         throw new NoSuchElementException();
       }
     }
-  }
-
-  protected void recalculateSize(){
-    entryCount.set(size());
   }
 }
