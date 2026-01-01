@@ -202,8 +202,8 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   @Override
   public boolean equals(Object obj) {
-    if (obj instanceof OffsetBitSet) {
-      return compareTo((OffsetBitSet) obj) == 0;
+    if (obj instanceof OffsetBitSet offsetBitSet) {
+      return compareTo(offsetBitSet) == 0;
     }
     return super.equals(obj);
   }
