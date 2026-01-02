@@ -111,8 +111,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public boolean contains(Object o) {
-    if (o instanceof Long) {
-      long lookup = (Long) o;
+    if (o instanceof Long lookup) {
       OffsetBitSet active = locate(lookup);
       if (active != null) {
         return active.isSet(lookup);
@@ -154,8 +153,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public boolean remove(Object o) {
-    if (o instanceof Long) {
-      long value = (Long) o;
+    if (o instanceof Long value) {
       OffsetBitSet active = locate(value);
       if (active != null) {
         boolean result = active.clear(value);
@@ -174,8 +172,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
   @Override
   public boolean containsAll(Collection<?> c) {
     for (Object l : c) {
-      if (l instanceof Long) {
-        long test = (Long) l;
+      if (l instanceof Long test) {
         if (!contains(test)) {
           return false;
         }

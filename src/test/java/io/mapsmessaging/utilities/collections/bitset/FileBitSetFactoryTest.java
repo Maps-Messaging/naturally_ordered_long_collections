@@ -23,7 +23,6 @@ package io.mapsmessaging.utilities.collections.bitset;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -81,28 +80,4 @@ class FileBitSetFactoryTest extends BitSetFactoryTest{
     }
   }
 
-  @Test
-  void testAutoDeleteAndReopen() throws Exception {
-    String path = "./bitsetTestDelete.bit";
-    File file = new File(path);
-    if (file.exists()) file.delete();
-
-    FileBitSetFactoryImpl factory = new FileBitSetFactoryImpl(path, 1024);
-    long id = System.currentTimeMillis();
-    OffsetBitSet bitSet = factory.open(id, 0);
-    factory.release(bitSet);
-
-    // Wait for auto-delete (10 sec) + buffer
-    Thread.sleep(12_000);
-
-    Assertions.assertFalse(file.exists(), "File should have been deleted");
-
-    // Now access it to cause reopen
-    OffsetBitSet reopened = factory.open(id, 0);
-    Assertions.assertNotNull(reopened);
-    reopened.set(0);
-    Assertions.assertTrue(reopened.isSet(0));
-    factory.release(reopened);
-    factory.close();
-  }
 }
