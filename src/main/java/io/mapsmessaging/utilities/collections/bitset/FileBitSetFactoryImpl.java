@@ -35,8 +35,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class FileBitSetFactoryImpl extends BitSetFactory {
 
@@ -51,7 +49,6 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   private final byte[] emptyBuffer;
   @Getter
   private final int shard;
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private RandomAccessFile raf;
   private boolean closed;
   private boolean deleted;
@@ -129,7 +126,6 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     if (delete) {
       deleteFiles();
     }
-    scheduler.shutdownNow();
   }
 
   public synchronized void cleanupIfPossible(long minSize) throws IOException {
