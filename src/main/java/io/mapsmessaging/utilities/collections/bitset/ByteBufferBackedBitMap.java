@@ -422,8 +422,7 @@ public class ByteBufferBackedBitMap implements BitSet {
   }
 
   private void bitwiseCompute(BitSet test, BitWiseOperator operator) {
-    if (test instanceof ByteBufferBackedBitMap) {
-      ByteBufferBackedBitMap map = (ByteBufferBackedBitMap) test;
+    if (test instanceof ByteBufferBackedBitMap map) {
       int len = Math.min(map.longs, longs);
       for (var x = 0; x < len; x++) {
         int position = (x << BYTE_BIT_SHIFT) + longStartIdx;
@@ -432,8 +431,7 @@ public class ByteBufferBackedBitMap implements BitSet {
         long result = operator.operation(lhs, rhs);
         backing.putLong(position, result);
       }
-    } else if (test instanceof BitSetImpl) {
-      BitSetImpl map = (BitSetImpl) test;
+    } else if (test instanceof BitSetImpl map) {
       long[] values = map.getWords();
       var rhsIndex = 0;
       int len = Math.min(values.length, longs);

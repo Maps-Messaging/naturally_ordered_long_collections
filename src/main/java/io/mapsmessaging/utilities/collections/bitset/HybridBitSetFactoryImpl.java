@@ -50,8 +50,7 @@ public class HybridBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public synchronized void release(@NonNull OffsetBitSet bitset) {
-    if (bitset instanceof DelegatingOffsetBitSet) {
-      DelegatingOffsetBitSet delegating = (DelegatingOffsetBitSet) bitset;
+    if (bitset instanceof DelegatingOffsetBitSet delegating) {
       delegating.releaseBitSet();
       removeDelegate(delegating.getUniqueId(), delegating);
     }
@@ -59,8 +58,7 @@ public class HybridBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public synchronized void close(@NonNull OffsetBitSet bitset) {
-    if (bitset instanceof DelegatingOffsetBitSet) {
-      DelegatingOffsetBitSet delegating = (DelegatingOffsetBitSet) bitset;
+    if (bitset instanceof DelegatingOffsetBitSet delegating) {
       delegating.closeBitSet();
       removeDelegate(delegating.getUniqueId(), delegating);
     }
