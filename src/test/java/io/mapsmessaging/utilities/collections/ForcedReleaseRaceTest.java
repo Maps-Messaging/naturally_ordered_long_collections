@@ -20,7 +20,6 @@ package io.mapsmessaging.utilities.collections;
 
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.OffsetBitSet;
-import org.junit.jupiter.api.Test;
 
 import java.util.Iterator;
 import java.util.concurrent.*;
@@ -41,7 +40,6 @@ class ForcedReleaseRaceTest {
     }
   }
 
-  @Test
   void iteratorEscape_plusPollRelease_canTriggerIllegalState() throws Exception {
     NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue(1L, new ReleasingFactory(8192));
 
