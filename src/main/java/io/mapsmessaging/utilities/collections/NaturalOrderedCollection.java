@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -111,8 +111,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public boolean contains(Object o) {
-    if (o instanceof Long) {
-      long lookup = (Long) o;
+    if (o instanceof Long lookup) {
       OffsetBitSet active = locate(lookup);
       if (active != null) {
         return active.isSet(lookup);
@@ -154,8 +153,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public boolean remove(Object o) {
-    if (o instanceof Long) {
-      long value = (Long) o;
+    if (o instanceof Long value) {
       OffsetBitSet active = locate(value);
       if (active != null) {
         boolean result = active.clear(value);
@@ -174,8 +172,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
   @Override
   public boolean containsAll(Collection<?> c) {
     for (Object l : c) {
-      if (l instanceof Long) {
-        long test = (Long) l;
+      if (l instanceof Long test) {
         if (!contains(test)) {
           return false;
         }
