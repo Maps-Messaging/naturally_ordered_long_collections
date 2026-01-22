@@ -55,7 +55,7 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
   @Override
   public Long poll() {
     if (tree.isEmpty()) {
-      return -1L;
+      return null;
     }
     OffsetBitSet current = tree.firstEntry().getValue();
 

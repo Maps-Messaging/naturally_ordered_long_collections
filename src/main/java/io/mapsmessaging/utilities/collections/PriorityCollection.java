@@ -276,7 +276,7 @@ public class PriorityCollection<T> implements Collection<T> {
   }
 
   boolean push(T entry, int priority) {
-    if (priority < 0 || priority > prioritySize) {
+    if (priority < 0 || priority >= prioritySize) {
       throw new IllegalArgumentException("Supplied priority outside of defined bounds");
     }
     boolean ret = priorityStructure.get(priority).add(entry);

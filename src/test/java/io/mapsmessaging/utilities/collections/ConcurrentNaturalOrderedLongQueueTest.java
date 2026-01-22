@@ -51,7 +51,7 @@ class ConcurrentNaturalOrderedLongQueueTest {
   void testOfferAndPoll() {
     assertTrue(queue.offer(10L));
     assertEquals(10L, queue.poll());
-    assertEquals( -1L, queue.poll());
+    assertNull(queue.poll());
   }
 
   @Test
