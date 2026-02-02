@@ -39,8 +39,7 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
 
   @Override
   public boolean offer(Long aLong) {
-    add(aLong);
-    return true;
+    return add(aLong);
   }
 
   @Override
