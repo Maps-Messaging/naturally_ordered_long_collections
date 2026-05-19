@@ -2,7 +2,7 @@
 <!--
   ~
   ~  Copyright [ 2020 - 2024 ] Matthew Buckton
-  ~  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+  ~  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
   ~
   ~  Licensed under the Apache License, Version 2.0 with the Commons Clause
   ~  (the "License"); you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.mapsmessaging</groupId>
   <artifactId>naturally_ordered_long_collections</artifactId>
-  <version>1.2.1</version>
+  <version>1.2.2</version>
   <packaging>jar</packaging>
 
   <name>Naturally Ordered Long Collections</name>
@@ -106,7 +106,7 @@
           <plugin>
             <groupId>org.sonatype.central</groupId>
             <artifactId>central-publishing-maven-plugin</artifactId>
-            <version>0.8.0</version>
+            <version>0.10.0</version>
             <extensions>true</extensions>
             <configuration>
               <publishingServerId>central</publishingServerId>
@@ -188,7 +188,7 @@
           </execution>
         </executions>
         <groupId>org.jacoco</groupId>
-        <version>0.8.12</version>
+        <version>0.8.14</version>
       </plugin>
 
       <!-- Setup the JUnit tests runner -->
@@ -209,7 +209,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
-        <version>3.3.1</version>
+        <version>3.4.0</version>
         <executions>
           <execution>
             <id>attach-sources</id>
@@ -285,7 +285,7 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <groupId>org.junit.jupiter</groupId>
       <scope>test</scope>
-      <version>5.11.4</version>
+      <version>6.0.3</version>
     </dependency>
 
     <!-- Java micro benchmarking -->
@@ -313,7 +313,7 @@
     <dependency>
       <artifactId>lombok</artifactId>
       <groupId>org.projectlombok</groupId>
-      <version>1.18.36</version>
+      <version>1.18.46</version>
       <scope>provided</scope>
     </dependency>
 

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -35,10 +35,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 public class FileBitSetFactoryImpl extends BitSetFactory {
 
@@ -53,11 +49,9 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   private final byte[] emptyBuffer;
   @Getter
   private final int shard;
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private RandomAccessFile raf;
   private boolean closed;
   private boolean deleted;
-  private ScheduledFuture<?> deleteTask;
 
   public FileBitSetFactoryImpl(@NonNull @NotNull String filename, int size) throws IOException {
     this(filename, size, 0);
@@ -132,10 +126,18 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     if (delete) {
       deleteFiles();
     }
-    scheduler.shutdownNow();
+  }
+
+  public synchronized void cleanupIfPossible(long minSize) throws IOException {
+    if(used.isEmpty() && raf != null && raf.length() > minSize){
+      deleteFiles();
+    }
   }
 
   private synchronized void deleteFiles() throws IOException {
+    if(!used.isEmpty()){
+      return; // We have used bitmaps
+    }
     if (raf != null && raf.getChannel().isOpen()) {
       clearList(used);
       clearList(free);
@@ -188,9 +190,6 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     used.remove(bitset);
     bitset.reset(0, -1);
     free.add((FileOffsetBitSet) bitset);
-    if (used.isEmpty()) {
-      scheduleDelete();
-    }
   }
 
 
@@ -272,20 +271,8 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     MappedBufferHelper.closeDirectBuffer(backing);
   }
 
-  private void scheduleDelete() {
-    if (deleteTask != null && !deleteTask.isDone()) return;
-    deleteTask = scheduler.schedule(() -> {
-      try {
-        deleteFiles();
-      } catch (IOException ignored) {
-        // Ignore this
-      }
-    }, 10, TimeUnit.SECONDS);
-  }
-
   private synchronized void checkState() {
     if (closed) throw new IllegalStateException("BitSet file is closed");
-    if (deleteTask != null && !deleteTask.isDone()) deleteTask.cancel(false);
     if (deleted) {
       reopen();
     }

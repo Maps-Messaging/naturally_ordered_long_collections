@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.utilities.collections;
 
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.ByteBufferBitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.FileBitSetFactoryImpl;
 import org.junit.jupiter.api.Assertions;
@@ -31,10 +32,14 @@ import java.nio.file.Paths;
 
 class NaturalOrderedLongQueueTest {
 
+
+  protected NaturalOrderedLongQueue build(long id, BitSetFactory factory ){
+    return new NaturalOrderedLongQueue(id, factory);
+  }
   @Test
   void simplePollOfferTest(){
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(4096);
-    NaturalOrderedLongQueue noll = new NaturalOrderedLongQueue(0, factory);
+    NaturalOrderedLongQueue noll = build(0, factory);
     for(long x=8192;x<2*8192;x++) {
       noll.offer(x);
     }
@@ -57,7 +62,7 @@ class NaturalOrderedLongQueueTest {
   @Test
   void simpleAddRemoveTest(){
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(4096);
-    NaturalOrderedLongQueue noll = new NaturalOrderedLongQueue(0, factory);
+    NaturalOrderedLongQueue noll = build(0, factory);
     for(long x=8192;x<2*8192;x++) {
       noll.add(x);
     }
@@ -87,7 +92,7 @@ class NaturalOrderedLongQueueTest {
       NaturalOrderedLongQueue[] queues = new NaturalOrderedLongQueue[sessionCount];
 
       for (int i = 0; i < sessionCount; i++) {
-        queues[i] = new NaturalOrderedLongQueue(i, factory);
+        queues[i] = build(i, factory);
       }
 
       for (long eventId = 0; eventId < totalEvents; eventId++) {
@@ -101,7 +106,7 @@ class NaturalOrderedLongQueueTest {
       factory = new FileBitSetFactoryImpl(filename, windowSize);
       queues = new NaturalOrderedLongQueue[sessionCount];
       for (int i = 0; i < sessionCount; i++) {
-        queues[i] = new NaturalOrderedLongQueue(i, factory);
+        queues[i] = build(i, factory);
       }
 
       for (int i = 0; i < sessionCount; i++) {
@@ -128,7 +133,7 @@ class NaturalOrderedLongQueueTest {
       Assertions.assertTrue(increasedFreeSize > initialFreeSize);
 
       // Phase 4: Reuse a closed session ID and verify it is empty
-      NaturalOrderedLongQueue reusedQueue = new NaturalOrderedLongQueue(0, factory);
+      NaturalOrderedLongQueue reusedQueue = build(0, factory);
       Assertions.assertTrue(reusedQueue.isEmpty());
       reusedQueue.offer(99999L);
       Assertions.assertEquals(99999, reusedQueue.poll());

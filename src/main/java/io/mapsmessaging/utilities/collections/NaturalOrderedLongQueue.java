@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -39,8 +39,7 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
 
   @Override
   public boolean offer(Long aLong) {
-    add(aLong);
-    return true;
+    return add(aLong);
   }
 
   @Override
@@ -55,7 +54,7 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
   @Override
   public Long poll() {
     if (tree.isEmpty()) {
-      return -1L;
+      return null;
     }
     OffsetBitSet current = tree.firstEntry().getValue();
 

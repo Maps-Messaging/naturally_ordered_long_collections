@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -422,8 +422,7 @@ public class ByteBufferBackedBitMap implements BitSet {
   }
 
   private void bitwiseCompute(BitSet test, BitWiseOperator operator) {
-    if (test instanceof ByteBufferBackedBitMap) {
-      ByteBufferBackedBitMap map = (ByteBufferBackedBitMap) test;
+    if (test instanceof ByteBufferBackedBitMap map) {
       int len = Math.min(map.longs, longs);
       for (var x = 0; x < len; x++) {
         int position = (x << BYTE_BIT_SHIFT) + longStartIdx;
@@ -432,8 +431,7 @@ public class ByteBufferBackedBitMap implements BitSet {
         long result = operator.operation(lhs, rhs);
         backing.putLong(position, result);
       }
-    } else if (test instanceof BitSetImpl) {
-      BitSetImpl map = (BitSetImpl) test;
+    } else if (test instanceof BitSetImpl map) {
       long[] values = map.getWords();
       var rhsIndex = 0;
       int len = Math.min(values.length, longs);

@@ -1,7 +1,7 @@
 /*
  *
  *  Copyright [ 2020 - 2024 ] Matthew Buckton
- *  Copyright [ 2024 - 2025 ] MapsMessaging B.V.
+ *  Copyright [ 2024 - 2026 ] MapsMessaging B.V.
  *
  *  Licensed under the Apache License, Version 2.0 with the Commons Clause
  *  (the "License"); you may not use this file except in compliance with the License.
@@ -61,8 +61,8 @@ public class PriorityQueue<T> extends PriorityCollection<T> implements Queue<T> 
     return response;
   }
 
-  @Override
-  public T poll() {
+
+  public T poll2() {
     for (int x = prioritySize - 1; x >= 0; x--) {
       if (!priorityStructure.get(x).isEmpty()) {
         entryCount.decrementAndGet();
@@ -71,6 +71,19 @@ public class PriorityQueue<T> extends PriorityCollection<T> implements Queue<T> 
     }
     return null;
   }
+
+  @Override
+  public T poll() {
+    for (int priorityIndex = prioritySize - 1; priorityIndex >= 0; priorityIndex--) {
+      T value = priorityStructure.get(priorityIndex).poll();
+      if (value != null) {
+        entryCount.decrementAndGet();
+        return value;
+      }
+    }
+    return null;
+  }
+
 
   @Override
   public T element() {
@@ -83,9 +96,10 @@ public class PriorityQueue<T> extends PriorityCollection<T> implements Queue<T> 
 
   @Override
   public T peek() {
-    for (int x = prioritySize - 1; x >= 0; x--) {
-      if (!priorityStructure.get(x).isEmpty()) {
-        return priorityStructure.get(x).peek();
+    for (int priorityIndex = prioritySize - 1; priorityIndex >= 0; priorityIndex--) {
+      T value = priorityStructure.get(priorityIndex).peek();
+      if (value != null) {
+        return value;
       }
     }
     return null;
