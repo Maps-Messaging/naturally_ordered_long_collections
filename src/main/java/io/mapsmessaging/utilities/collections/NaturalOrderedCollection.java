@@ -185,17 +185,19 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public boolean addAll(@NonNull @NotNull Collection<? extends Long> c) {
+    boolean changed = false;
     if (isMatching(c)) {
-      internalAddAll((NaturalOrderedCollection) c);
+      changed = internalAddAll((NaturalOrderedCollection) c);
     } else {
       for (long value : c) {
-        add(value);
+        changed = add(value) || changed;
       }
     }
-    return true;
+    return changed;
   }
 
-  private void internalAddAll(NaturalOrderedCollection rhs) {
+  private boolean internalAddAll(NaturalOrderedCollection rhs) {
+    boolean changed = false;
     Collection<OffsetBitSet> bitsets = rhs.tree.values();
     for (OffsetBitSet toAddBitset : bitsets) {
       if (!toAddBitset.isActive()) {
@@ -207,36 +209,45 @@ public class NaturalOrderedCollection implements Collection<Long> {
         try {
           copy = factory.open(uniqueId, toAddBitset.getStart());
           tree.put(copy.getStart(), copy);
+          changed = true;
         } catch (IOException e) {
           throw new IORunTimeException("Fatal error opening new bitset, unable to continue", e);
         }
       }
+      int original = copy.cardinality();
       copy.getBitSet().or(toAddBitset.getBitSet());
+      changed = original != copy.cardinality() || changed;
     }
+    return changed;
   }
 
   @Override
   public boolean removeAll(@NonNull @NotNull Collection<?> c) {
+    boolean changed = false;
     if (isMatching(c)) {
       NaturalOrderedCollection rhs = (NaturalOrderedCollection) c;
       Collection<OffsetBitSet> bitsets = rhs.tree.values();
       for (OffsetBitSet toRemove : bitsets) {
         OffsetBitSet copy = tree.get(toRemove.getStart());
         if (copy != null) {
+          int original = copy.cardinality();
           copy.getBitSet().andNot(toRemove.getBitSet());
           if (copy.isEmpty()) {
             tree.remove(copy.getStart());
             factory.release(copy);
+            changed = true;
+          } else {
+            changed = original != copy.cardinality() || changed;
           }
         }
       }
     } else {
       for (Object value : c) {
-        remove(value);
+        changed = remove(value) || changed;
       }
     }
     validateTree();
-    return true;
+    return changed;
   }
 
   @Override
@@ -283,22 +294,34 @@ public class NaturalOrderedCollection implements Collection<Long> {
   private boolean matchingRetainAll(Collection<?> c) {
     boolean changed = false;
     NaturalOrderedCollection rhs = (NaturalOrderedCollection) c;
-    Collection<OffsetBitSet> bitsets = rhs.tree.values();
-    for (OffsetBitSet toRetain : bitsets) {
-      OffsetBitSet copy = tree.get(toRetain.getStart());
-      if (copy != null) {
-        int original = copy.cardinality();
-        copy.getBitSet().and(toRetain.getBitSet());
-        if (copy.isEmpty()) {
-          tree.remove(copy.getStart());
-          factory.release(copy);
-        } else {
-          changed = original != copy.cardinality() || changed;
-        }
+    Iterator<Map.Entry<Long, OffsetBitSet>> iterator = tree.entrySet().iterator();
+
+    while (iterator.hasNext()) {
+      Map.Entry<Long, OffsetBitSet> entry = iterator.next();
+      OffsetBitSet current = entry.getValue();
+      OffsetBitSet toRetain = rhs.tree.get(current.getStart());
+
+      if (toRetain == null) {
+        current.clearAll();
+        factory.release(current);
+        iterator.remove();
+        changed = true;
+        continue;
+      }
+
+      int original = current.cardinality();
+      current.getBitSet().and(toRetain.getBitSet());
+
+      if (current.isEmpty()) {
+        factory.release(current);
+        iterator.remove();
+        changed = true;
+      } else {
+        changed = original != current.cardinality() || changed;
       }
     }
-    validateTree();
 
+    validateTree();
     return changed;
   }
 

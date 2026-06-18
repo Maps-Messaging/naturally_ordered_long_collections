@@ -45,7 +45,15 @@ public class ManagedBitSetFactoryImpl extends BitSetFactory {
   public synchronized void release(@NonNull OffsetBitSet bitset) {
     bitset.clearAll();
     long uid = bitset.getBitSet().getUniqueId();
-    map.getOrDefault(uid, List.of()).remove(bitset);
+    List<OffsetBitSet> bitsets = map.get(uid);
+    if (bitsets == null) {
+      return;
+    }
+
+    bitsets.remove(bitset);
+    if (bitsets.isEmpty()) {
+      map.remove(uid);
+    }
   }
 
   @Override

@@ -168,12 +168,20 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   public long previousSetBit(long fromIndex) {
     ensureActive("previousSetBit");
-    return rawBitSet.previousSetBit((int) (fromIndex - start)) + start;
+    long response = rawBitSet.previousSetBit((int) (fromIndex - start));
+    if (response >= 0) {
+      response += start;
+    }
+    return response;
   }
 
   public long previousClearBit(long fromIndex) {
     ensureActive("previousClearBit");
-    return rawBitSet.previousClearBit((int) (fromIndex - start)) + start;
+    long response = rawBitSet.previousClearBit((int) (fromIndex - start));
+    if (response >= 0) {
+      response += start;
+    }
+    return response;
   }
 
   public void and(BitSet map) {

@@ -580,5 +580,218 @@ public abstract class BitSetTest  {
     Assertions.assertTrue(bitmap.isEmpty());
   }
 
+  @Test
+  public void testBoundaryAtCapacityThrows() {
+    BitSet bitmap = getBitSet(64);
+    int capacity = bitmap.length();
 
+    Assertions.assertThrows(IndexOutOfBoundsException.class, () -> bitmap.set(capacity));
+    Assertions.assertThrows(IndexOutOfBoundsException.class, () -> bitmap.clear(capacity));
+    Assertions.assertThrows(IndexOutOfBoundsException.class, () -> bitmap.isSet(capacity));
+    Assertions.assertThrows(IndexOutOfBoundsException.class, () -> bitmap.isSetAndClear(capacity));
+    Assertions.assertThrows(IndexOutOfBoundsException.class, () -> bitmap.flip(capacity));
+  }
+  @Test
+  public void testPreviousSetBitAtZero() {
+    BitSet bitmap = getBitSet(64);
+
+    Assertions.assertEquals(-1, bitmap.previousSetBit(0));
+
+    bitmap.set(0);
+    Assertions.assertEquals(0, bitmap.previousSetBit(0));
+
+    bitmap.clear(0);
+    Assertions.assertEquals(-1, bitmap.previousSetBit(0));
+  }
+
+  @Test
+  public void testPreviousClearBitAtZero() {
+    BitSet bitmap = getBitSet(64);
+
+    Assertions.assertEquals(0, bitmap.previousClearBit(0));
+
+    bitmap.set(0);
+    Assertions.assertEquals(-1, bitmap.previousClearBit(0));
+
+    bitmap.clear(0);
+    Assertions.assertEquals(0, bitmap.previousClearBit(0));
+  }
+
+  @Test
+  public void testPreviousSetBitAcrossWordBoundary() {
+    BitSet bitmap = getBitSet(256);
+
+    bitmap.set(63);
+    bitmap.set(64);
+    bitmap.set(65);
+    bitmap.set(127);
+    bitmap.set(128);
+
+    Assertions.assertEquals(63, bitmap.previousSetBit(63));
+    Assertions.assertEquals(64, bitmap.previousSetBit(64));
+    Assertions.assertEquals(65, bitmap.previousSetBit(65));
+    Assertions.assertEquals(127, bitmap.previousSetBit(127));
+    Assertions.assertEquals(128, bitmap.previousSetBit(128));
+
+    bitmap.clear(128);
+    Assertions.assertEquals(127, bitmap.previousSetBit(128));
+
+    bitmap.clear(127);
+    Assertions.assertEquals(65, bitmap.previousSetBit(127));
+
+    bitmap.clear(65);
+    Assertions.assertEquals(64, bitmap.previousSetBit(65));
+
+    bitmap.clear(64);
+    Assertions.assertEquals(63, bitmap.previousSetBit(64));
+
+    bitmap.clear(63);
+    Assertions.assertEquals(-1, bitmap.previousSetBit(63));
+  }
+
+  @Test
+  public void testPreviousClearBitAcrossWordBoundary() {
+    BitSet bitmap = getBitSet(256);
+
+    for (int x = 0; x < bitmap.length(); x++) {
+      bitmap.set(x);
+    }
+
+    bitmap.clear(63);
+    bitmap.clear(64);
+    bitmap.clear(65);
+    bitmap.clear(127);
+    bitmap.clear(128);
+
+    Assertions.assertEquals(63, bitmap.previousClearBit(63));
+    Assertions.assertEquals(64, bitmap.previousClearBit(64));
+    Assertions.assertEquals(65, bitmap.previousClearBit(65));
+    Assertions.assertEquals(127, bitmap.previousClearBit(127));
+    Assertions.assertEquals(128, bitmap.previousClearBit(128));
+
+    bitmap.set(128);
+    Assertions.assertEquals(127, bitmap.previousClearBit(128));
+
+    bitmap.set(127);
+    Assertions.assertEquals(65, bitmap.previousClearBit(127));
+
+    bitmap.set(65);
+    Assertions.assertEquals(64, bitmap.previousClearBit(65));
+
+    bitmap.set(64);
+    Assertions.assertEquals(63, bitmap.previousClearBit(64));
+
+    bitmap.set(63);
+    Assertions.assertEquals(-1, bitmap.previousClearBit(63));
+  }
+
+  @Test
+  public void testNextSetBitAndClearAcrossWordBoundary() {
+    BitSet bitmap = getBitSet(256);
+
+    bitmap.set(63);
+    bitmap.set(64);
+    bitmap.set(65);
+    bitmap.set(127);
+    bitmap.set(128);
+
+    Assertions.assertEquals(63, bitmap.nextSetBitAndClear(0));
+    Assertions.assertFalse(bitmap.isSet(63));
+
+    Assertions.assertEquals(64, bitmap.nextSetBitAndClear(0));
+    Assertions.assertFalse(bitmap.isSet(64));
+
+    Assertions.assertEquals(65, bitmap.nextSetBitAndClear(0));
+    Assertions.assertFalse(bitmap.isSet(65));
+
+    Assertions.assertEquals(127, bitmap.nextSetBitAndClear(0));
+    Assertions.assertFalse(bitmap.isSet(127));
+
+    Assertions.assertEquals(128, bitmap.nextSetBitAndClear(0));
+    Assertions.assertFalse(bitmap.isSet(128));
+
+    Assertions.assertTrue(bitmap.isEmpty());
+    Assertions.assertEquals(-1, bitmap.nextSetBitAndClear(0));
+  }
+
+  @Test
+  public void testNextSearchFromBoundaryValues() {
+    BitSet bitmap = getBitSet(256);
+
+    bitmap.set(63);
+    bitmap.set(64);
+    bitmap.set(65);
+    bitmap.set(127);
+    bitmap.set(128);
+
+    Assertions.assertEquals(63, bitmap.nextSetBit(0));
+    Assertions.assertEquals(63, bitmap.nextSetBit(63));
+    Assertions.assertEquals(64, bitmap.nextSetBit(64));
+    Assertions.assertEquals(65, bitmap.nextSetBit(65));
+    Assertions.assertEquals(127, bitmap.nextSetBit(66));
+    Assertions.assertEquals(128, bitmap.nextSetBit(128));
+    Assertions.assertEquals(-1, bitmap.nextSetBit(129));
+  }
+
+  @Test
+  public void testListIteratorWalksBackwardAcrossWordBoundary() {
+    BitSet bitmap = getBitSet(256);
+
+    bitmap.set(1);
+    bitmap.set(63);
+    bitmap.set(64);
+    bitmap.set(65);
+    bitmap.set(128);
+
+    ListIterator<Integer> iterator = bitmap.listIterator();
+    while (iterator.hasNext()) {
+      iterator.next();
+    }
+
+    Assertions.assertTrue(iterator.hasPrevious());
+    Assertions.assertEquals(128, iterator.previous());
+    Assertions.assertTrue(iterator.hasPrevious());
+    Assertions.assertEquals(65, iterator.previous());
+    Assertions.assertTrue(iterator.hasPrevious());
+    Assertions.assertEquals(64, iterator.previous());
+    Assertions.assertTrue(iterator.hasPrevious());
+    Assertions.assertEquals(63, iterator.previous());
+    Assertions.assertTrue(iterator.hasPrevious());
+    Assertions.assertEquals(1, iterator.previous());
+    Assertions.assertFalse(iterator.hasPrevious());
+  }
+
+  @Test
+  public void testFlipRangeCanUseCapacityAsExclusiveEnd() {
+    BitSet bitmap = getBitSet(64);
+    int capacity = bitmap.length();
+
+    bitmap.flip(0, capacity);
+
+    Assertions.assertEquals(capacity, bitmap.cardinality());
+    for (int x = 0; x < capacity; x++) {
+      Assertions.assertTrue(bitmap.isSet(x));
+    }
+
+    bitmap.flip(0, capacity);
+
+    Assertions.assertTrue(bitmap.isEmpty());
+  }
+
+  @Test
+  public void testFlipRangeAcrossWordBoundary() {
+    BitSet bitmap = getBitSet(256);
+
+    bitmap.flip(63, 129);
+
+    Assertions.assertFalse(bitmap.isSet(62));
+    for (int x = 63; x < 129; x++) {
+      Assertions.assertTrue(bitmap.isSet(x));
+    }
+    Assertions.assertFalse(bitmap.isSet(129));
+
+    bitmap.flip(63, 129);
+
+    Assertions.assertTrue(bitmap.isEmpty());
+  }
 }

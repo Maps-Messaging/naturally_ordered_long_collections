@@ -40,6 +40,107 @@ public abstract class PriorityQueueTest  {
   }
 
   @Test
+  public void peekReturnsHighestPriorityWithoutRemoving() {
+    PriorityQueue<TestData> priorityQueue = createQueue(4);
+
+    priorityQueue.offer(new TestData(1, 0));
+    priorityQueue.offer(new TestData(2, 3));
+    priorityQueue.offer(new TestData(3, 1));
+
+    Assertions.assertEquals(3, priorityQueue.size());
+    Assertions.assertEquals(2, priorityQueue.peek().uniqueId);
+    Assertions.assertEquals(3, priorityQueue.size());
+    Assertions.assertEquals(2, priorityQueue.peek().uniqueId);
+    Assertions.assertEquals(3, priorityQueue.size());
+
+    Assertions.assertEquals(2, priorityQueue.poll().uniqueId);
+    Assertions.assertEquals(2, priorityQueue.size());
+  }
+
+  @Test
+  public void pollOnEmptyDoesNotChangeSize() {
+    PriorityQueue<TestData> priorityQueue = createQueue(4);
+
+    Assertions.assertEquals(0, priorityQueue.size());
+    Assertions.assertNull(priorityQueue.poll());
+    Assertions.assertEquals(0, priorityQueue.size());
+    Assertions.assertNull(priorityQueue.poll());
+    Assertions.assertEquals(0, priorityQueue.size());
+  }
+
+  @Test
+  public void lastRemovesLowestPriorityAndPollRemovesHighestPriority() {
+    PriorityQueue<TestData> priorityQueue = createQueue(4);
+
+    priorityQueue.offer(new TestData(10, 0));
+    priorityQueue.offer(new TestData(20, 2));
+    priorityQueue.offer(new TestData(30, 3));
+    priorityQueue.offer(new TestData(40, 1));
+
+    Assertions.assertEquals(4, priorityQueue.size());
+    Assertions.assertEquals(10, priorityQueue.last().uniqueId);
+    Assertions.assertEquals(3, priorityQueue.size());
+
+    Assertions.assertEquals(30, priorityQueue.poll().uniqueId);
+    Assertions.assertEquals(20, priorityQueue.poll().uniqueId);
+    Assertions.assertEquals(40, priorityQueue.poll().uniqueId);
+    Assertions.assertTrue(priorityQueue.isEmpty());
+  }
+
+  @Test
+  public void poll2ReturnsHighestPriorityFirstAndUpdatesSize() {
+    PriorityQueue<TestData> priorityQueue = createQueue(4);
+
+    priorityQueue.offer(new TestData(10, 0));
+    priorityQueue.offer(new TestData(20, 2));
+    priorityQueue.offer(new TestData(30, 3));
+    priorityQueue.offer(new TestData(40, 1));
+
+    Assertions.assertEquals(4, priorityQueue.size());
+    Assertions.assertEquals(30, priorityQueue.poll2().uniqueId);
+    Assertions.assertEquals(3, priorityQueue.size());
+    Assertions.assertEquals(20, priorityQueue.poll2().uniqueId);
+    Assertions.assertEquals(2, priorityQueue.size());
+    Assertions.assertEquals(40, priorityQueue.poll2().uniqueId);
+    Assertions.assertEquals(1, priorityQueue.size());
+    Assertions.assertEquals(10, priorityQueue.poll2().uniqueId);
+    Assertions.assertEquals(0, priorityQueue.size());
+    Assertions.assertNull(priorityQueue.poll2());
+    Assertions.assertEquals(0, priorityQueue.size());
+  }
+
+  @Test
+  public void removeAndElementThrowOnEmptyQueue() {
+    PriorityQueue<TestData> priorityQueue = createQueue(4);
+
+    Assertions.assertThrows(NoSuchElementException.class, priorityQueue::remove);
+    Assertions.assertThrows(NoSuchElementException.class, priorityQueue::element);
+  }
+
+  @Test
+  public void samePriorityEntriesDrainInInsertionOrder() {
+    PriorityQueue<TestData> priorityQueue = createQueue(4);
+
+    priorityQueue.offer(new TestData(1, 2));
+    priorityQueue.offer(new TestData(2, 2));
+    priorityQueue.offer(new TestData(3, 2));
+
+    Assertions.assertEquals(1, priorityQueue.poll().uniqueId);
+    Assertions.assertEquals(2, priorityQueue.poll().uniqueId);
+    Assertions.assertEquals(3, priorityQueue.poll().uniqueId);
+    Assertions.assertTrue(priorityQueue.isEmpty());
+  }
+
+  @Test
+  public void lastOnEmptyDoesNotChangeSize() {
+    PriorityQueue<TestData> priorityQueue = createQueue(4);
+
+    Assertions.assertEquals(0, priorityQueue.size());
+    Assertions.assertNull(priorityQueue.last());
+    Assertions.assertEquals(0, priorityQueue.size());
+  }
+
+  @Test
   public void testSimpleInsertionAndWalk(){
     for(int[] values:insertionTests) {
       insertionAndWalkValidation(values[0], values[1]);
