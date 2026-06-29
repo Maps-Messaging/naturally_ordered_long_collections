@@ -202,7 +202,7 @@
           </includes>
         </configuration>
         <groupId>org.apache.maven.plugins</groupId>
-        <version>3.5.2</version>
+        <version>3.5.5</version>
       </plugin>
 
       <!-- build the source jar as well -->
