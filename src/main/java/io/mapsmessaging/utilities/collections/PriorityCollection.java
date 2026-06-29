@@ -46,7 +46,7 @@ public class PriorityCollection<T> implements Collection<T> {
     for (var x = 0; x < priorityBound; x++) {
       priorityStructure.add(new LinkedList<>());
     }
-    entryCount = new AtomicLong(0);
+    entryCount = new AtomicLong(calculateSize());
   }
 
   public PriorityCollection(Queue<T>[] priorityQueues, @Nullable PriorityFactory<T> factory) {
@@ -57,7 +57,7 @@ public class PriorityCollection<T> implements Collection<T> {
     prioritySize = priorityQueues.length;
     priorityFactory = factory;
     priorityStructure.addAll(Arrays.asList(priorityQueues).subList(0, prioritySize));
-    entryCount = new AtomicLong(0);
+    entryCount = new AtomicLong(calculateSize());
   }
 
   public void close() {
@@ -120,13 +120,17 @@ public class PriorityCollection<T> implements Collection<T> {
     return response.toArray();
   }
 
-  public int size() {
+  private int calculateSize() {
     var size = 0;
-    for (Queue<T> ts : priorityStructure) {
-      if (!ts.isEmpty()) {
-        size += ts.size();
-      }
+    for (Queue<T> queue : priorityStructure) {
+      size += queue.size();
     }
+    return size;
+  }
+
+  @Override
+  public int size() {
+    int size = calculateSize();
     entryCount.set(size);
     return size;
   }
