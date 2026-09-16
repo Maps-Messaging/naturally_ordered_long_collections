@@ -95,17 +95,17 @@ class FileBitSetSignedPersistenceTest {
   }
 
   private void writeLegacyRecord(Path file, long uniqueId, long offset, int bit) throws IOException {
-    int bytes = WINDOW_SIZE / Byte.SIZE;
-    byte[] payload = new byte[bytes];
-    int byteIndex = bit / Byte.SIZE;
-    int bitIndex = bit % Byte.SIZE;
-    payload[byteIndex] = (byte) (1 << bitIndex);
+    int wordCount = WINDOW_SIZE / Long.SIZE;
+    int targetWord = bit / Long.SIZE;
+    int bitInWord = bit % Long.SIZE;
 
     try (RandomAccessFile randomAccessFile = new RandomAccessFile(file.toFile(), "rw")) {
       randomAccessFile.setLength(0);
       randomAccessFile.writeLong(uniqueId);
       randomAccessFile.writeLong(offset);
-      randomAccessFile.write(payload);
+      for (int word = 0; word < wordCount; word++) {
+        randomAccessFile.writeLong(word == targetWord ? 1L << bitInWord : 0L);
+      }
     }
   }
 }
