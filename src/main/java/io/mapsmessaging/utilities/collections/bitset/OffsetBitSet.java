@@ -41,6 +41,8 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   protected long start;
   @Getter
   protected long end;
+  @Getter
+  protected int logicalLength;
 
   @Getter
   private volatile boolean active = true;
@@ -51,16 +53,16 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   private final AtomicReference<ThreadState> closeState = new AtomicReference<>();
 
   public OffsetBitSet(@NonNull @NotNull BitSet bitSet, long offset) {
+    this(bitSet, offset, representableLength(offset, bitSet.length()));
+  }
+
+  public OffsetBitSet(@NonNull @NotNull BitSet bitSet, long offset, int logicalLength) {
     rawBitSet = bitSet;
-    this.start = offset;
-    end = start + rawBitSet.length();
+    configureWindow(offset, logicalLength);
   }
 
   public void releaseBitSet() {
-    // Record this close attempt (even if it's a double close, we want the stack).
     ThreadState attempt = ThreadState.capture("releaseBitSet");
-
-    // First close wins.
     ThreadState existing = closeState.get();
     if (existing == null) {
       if (closeState.compareAndSet(null, attempt)) {
@@ -70,7 +72,6 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
       }
     }
 
-    // If this isn't the first close, scream loudly with both stacks.
     if (existing != attempt) {
       PrintStream err = System.err;
       err.println(header("DOUBLE_CLOSE_ATTEMPT", attempt));
@@ -80,7 +81,6 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
       err.flush();
     }
 
-    // Make the state clearly "dead".
     rawBitSet = null;
     active = false;
   }
@@ -96,7 +96,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   public boolean set(long bit) {
     ensureActive("set");
-    return rawBitSet.set((int) (bit - start));
+    return rawBitSet.set(toLocalIndex(bit));
   }
 
   @Override
@@ -104,32 +104,45 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
     if (rawBitSet == null) {
       return "cleared - unusable";
     }
-    return "Offset::{Start:" + start + ", End:" + end + "} > " + rawBitSet;
+    return "Offset::{Start:" + start + ", End:" + end + ", Length:" + logicalLength + "} > " + rawBitSet;
   }
 
   public boolean clear(long bit) {
     ensureActive("clear(bit)");
-    return rawBitSet.clear((int) (bit - start));
+    return rawBitSet.clear(toLocalIndex(bit));
   }
 
   public boolean isSet(long bit) {
     ensureActive("isSet");
-    return rawBitSet.isSet((int) (bit - start));
+    return rawBitSet.isSet(toLocalIndex(bit));
   }
 
   public void flip(long bit) {
     ensureActive("flip(bit)");
-    rawBitSet.flip((int) (bit - start));
+    rawBitSet.flip(toLocalIndex(bit));
   }
 
   public void flip(long fromIndex, long toIndex) {
     ensureActive("flip(range)");
-    rawBitSet.flip((int) (fromIndex - start), (int) (toIndex - start));
+    if (fromIndex == toIndex) {
+      return;
+    }
+    if (fromIndex > toIndex) {
+      throw new IndexOutOfBoundsException("fromIndex must not be greater than toIndex");
+    }
+    int from = toLocalIndex(fromIndex);
+    long last = lastValue();
+    long maximumExclusive = last == Long.MAX_VALUE ? Long.MAX_VALUE : last + 1;
+    if (toIndex < start || toIndex > maximumExclusive) {
+      throw new IndexOutOfBoundsException("Range end outside window: " + toIndex);
+    }
+    int to = (int) (toIndex - start);
+    rawBitSet.flip(from, to);
   }
 
   public int length() {
     ensureActive("length");
-    return rawBitSet.length();
+    return logicalLength;
   }
 
   public boolean isEmpty() {
@@ -142,46 +155,54 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
     return rawBitSet.cardinality();
   }
 
-  public long nextSetBit(long fromIndex) {
+  public Long nextSetBit(long fromIndex) {
     ensureActive("nextSetBit");
-    int index = (int) (fromIndex - start);
-    long response = rawBitSet.nextSetBit(index);
-    if (response >= 0) {
-      response += start;
+    Integer index = nextSearchIndex(fromIndex);
+    if (index == null) {
+      return null;
     }
-    return response;
+    int response = rawBitSet.nextSetBit(index);
+    return toAbsoluteValue(response);
   }
 
-  public long nextSetBitAndClear(long fromIndex) {
+  public Long nextSetBitAndClear(long fromIndex) {
     ensureActive("nextSetBitAndClear");
-    long response = rawBitSet.nextSetBitAndClear((int) (fromIndex - start));
-    if (response >= 0) {
-      response += start;
+    Integer index = nextSearchIndex(fromIndex);
+    if (index == null) {
+      return null;
     }
-    return response;
+    int response = rawBitSet.nextSetBitAndClear(index);
+    return toAbsoluteValue(response);
   }
 
-  public long nextClearBit(long fromIndex) {
+  public Long nextClearBit(long fromIndex) {
     ensureActive("nextClearBit");
-    return rawBitSet.nextClearBit((int) (fromIndex - start)) + start;
+    Integer index = nextSearchIndex(fromIndex);
+    if (index == null) {
+      return null;
+    }
+    int response = rawBitSet.nextClearBit(index);
+    return toAbsoluteValue(response);
   }
 
-  public long previousSetBit(long fromIndex) {
+  public Long previousSetBit(long fromIndex) {
     ensureActive("previousSetBit");
-    long response = rawBitSet.previousSetBit((int) (fromIndex - start));
-    if (response >= 0) {
-      response += start;
+    Integer index = previousSearchIndex(fromIndex);
+    if (index == null) {
+      return null;
     }
-    return response;
+    int response = rawBitSet.previousSetBit(index);
+    return toAbsoluteValue(response);
   }
 
-  public long previousClearBit(long fromIndex) {
+  public Long previousClearBit(long fromIndex) {
     ensureActive("previousClearBit");
-    long response = rawBitSet.previousClearBit((int) (fromIndex - start));
-    if (response >= 0) {
-      response += start;
+    Integer index = previousSearchIndex(fromIndex);
+    if (index == null) {
+      return null;
     }
-    return response;
+    int response = rawBitSet.previousClearBit(index);
+    return toAbsoluteValue(response);
   }
 
   public void and(BitSet map) {
@@ -210,11 +231,76 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
   }
 
   public void reset(long start, long uniqueId) {
+    reset(start, uniqueId, representableLength(start, rawBitSet.length()));
+  }
+
+  public void reset(long start, long uniqueId, int logicalLength) {
     ensureActive("reset");
-    this.start = start;
-    end = start + rawBitSet.length();
+    configureWindow(start, logicalLength);
     rawBitSet.clear();
     rawBitSet.setUniqueId(uniqueId);
+  }
+
+  private void configureWindow(long windowStart, int requestedLength) {
+    int maximumLength = representableLength(windowStart, rawBitSet.length());
+    if (requestedLength <= 0 || requestedLength > maximumLength) {
+      throw new IllegalArgumentException(
+          "Logical window length must be between 1 and " + maximumLength + ", received " + requestedLength);
+    }
+    start = windowStart;
+    logicalLength = requestedLength;
+    long last = lastValue();
+    end = last == Long.MAX_VALUE ? Long.MAX_VALUE : last + 1;
+  }
+
+  private static int representableLength(long windowStart, int physicalLength) {
+    if (physicalLength <= 0) {
+      throw new IllegalArgumentException("BitSet length must be greater than 0");
+    }
+    if (windowStart > Long.MAX_VALUE - (physicalLength - 1L)) {
+      return (int) (Long.MAX_VALUE - windowStart + 1L);
+    }
+    return physicalLength;
+  }
+
+  private long lastValue() {
+    return start + logicalLength - 1L;
+  }
+
+  private int toLocalIndex(long bit) {
+    long last = lastValue();
+    if (bit < start || bit > last) {
+      throw new IndexOutOfBoundsException(
+          "Expecting range from " + start + " to " + last + " received " + bit);
+    }
+    return (int) (bit - start);
+  }
+
+  private Integer nextSearchIndex(long fromIndex) {
+    if (fromIndex > lastValue()) {
+      return null;
+    }
+    if (fromIndex <= start) {
+      return 0;
+    }
+    return (int) (fromIndex - start);
+  }
+
+  private Integer previousSearchIndex(long fromIndex) {
+    if (fromIndex < start) {
+      return null;
+    }
+    if (fromIndex >= lastValue()) {
+      return logicalLength - 1;
+    }
+    return (int) (fromIndex - start);
+  }
+
+  private Long toAbsoluteValue(int localIndex) {
+    if (localIndex < 0 || localIndex >= logicalLength) {
+      return null;
+    }
+    return start + localIndex;
   }
 
   private void ensureActive(String operation) {
@@ -291,14 +377,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   @Override
   public int compareTo(OffsetBitSet o) {
-    long v = (start - o.start);
-    if (v < 0) {
-      return -1;
-    }
-    if (v > 0) {
-      return 1;
-    }
-    return 0;
+    return Long.compare(start, o.start);
   }
 
   @Override
@@ -306,12 +385,12 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
     if (obj instanceof OffsetBitSet offsetBitSet) {
       return compareTo(offsetBitSet) == 0;
     }
-    return super.equals(obj);
+    return false;
   }
 
   @Override
   public int hashCode() {
-    return super.hashCode();
+    return Long.hashCode(start);
   }
 
   class OffsetBitSetListIterator implements ListIterator<Long> {
@@ -363,7 +442,7 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
     @Override
     public void add(Long aLong) {
-      implIterator.add((int) (aLong - start));
+      implIterator.add(toLocalIndex(aLong));
     }
   }
 
