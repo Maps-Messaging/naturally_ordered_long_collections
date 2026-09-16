@@ -36,17 +36,19 @@ public class DelegatingOffsetBitSet extends OffsetBitSet {
   @Getter
   private BitSetFactory bitSetFactory;
 
-
   public DelegatingOffsetBitSet(@NonNull OffsetBitSet initial, BitSetFactory bitSetFactory, long uniqueId) {
-    super(initial.getBitSet(), initial.getStart()); // Establish bounds
+    super(initial.getBitSet(), initial.getStart(), initial.getLogicalLength());
     this.bitSetFactory = bitSetFactory;
-    this.delegate = initial;
+    delegate = initial;
     this.uniqueId = uniqueId;
   }
 
   public void swapDelegate(@NonNull OffsetBitSet replacement, BitSetFactory bitSetFactory) {
-    this.delegate = replacement;
+    delegate = replacement;
     this.bitSetFactory = bitSetFactory;
+    start = replacement.getStart();
+    logicalLength = replacement.getLogicalLength();
+    end = replacement.getEnd();
   }
 
   public void closeBitSet() {
@@ -99,27 +101,27 @@ public class DelegatingOffsetBitSet extends OffsetBitSet {
   }
 
   @Override
-  public long nextSetBit(long fromIndex) {
+  public Long nextSetBit(long fromIndex) {
     return delegate.nextSetBit(fromIndex);
   }
 
   @Override
-  public long nextSetBitAndClear(long fromIndex) {
+  public Long nextSetBitAndClear(long fromIndex) {
     return delegate.nextSetBitAndClear(fromIndex);
   }
 
   @Override
-  public long nextClearBit(long fromIndex) {
+  public Long nextClearBit(long fromIndex) {
     return delegate.nextClearBit(fromIndex);
   }
 
   @Override
-  public long previousSetBit(long fromIndex) {
+  public Long previousSetBit(long fromIndex) {
     return delegate.previousSetBit(fromIndex);
   }
 
   @Override
-  public long previousClearBit(long fromIndex) {
+  public Long previousClearBit(long fromIndex) {
     return delegate.previousClearBit(fromIndex);
   }
 
@@ -166,19 +168,27 @@ public class DelegatingOffsetBitSet extends OffsetBitSet {
   @Override
   public void reset(long start, long uniqueId) {
     delegate.reset(start, uniqueId);
-    this.start = start;
-    this.end = start + delegate.length();
+    this.start = delegate.getStart();
+    logicalLength = delegate.getLogicalLength();
+    end = delegate.getEnd();
+  }
+
+  @Override
+  public void reset(long start, long uniqueId, int logicalLength) {
+    delegate.reset(start, uniqueId, logicalLength);
+    this.start = delegate.getStart();
+    this.logicalLength = delegate.getLogicalLength();
+    end = delegate.getEnd();
   }
 
   @Override
   public boolean equals(Object o) {
     if (!(o instanceof DelegatingOffsetBitSet)) return false;
-    return (this == o);
+    return this == o;
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(uniqueId, getStart());
   }
-
 }

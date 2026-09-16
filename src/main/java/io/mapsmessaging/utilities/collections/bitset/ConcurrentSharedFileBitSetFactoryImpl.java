@@ -42,6 +42,11 @@ public class ConcurrentSharedFileBitSetFactoryImpl extends SharedFileBitSetFacto
   }
 
   @Override
+  public synchronized List<OffsetBitSet> getFreeBitSets() {
+    return super.getFreeBitSets();
+  }
+
+  @Override
   public synchronized List<Long> getUniqueIds() {
     return super.getUniqueIds();
   }
