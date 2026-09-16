@@ -22,7 +22,11 @@ package io.mapsmessaging.utilities.collections.bitset;
 
 import lombok.NonNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ManagedBitSetFactoryImpl extends BitSetFactory {
 
@@ -35,7 +39,7 @@ public class ManagedBitSetFactoryImpl extends BitSetFactory {
   @Override
   public synchronized OffsetBitSet open(long uniqueId, long id) {
     long start = getStartIndex(id);
-    OffsetBitSet bitset = new OffsetBitSet(new BitSetImpl(windowSize), start);
+    OffsetBitSet bitset = new OffsetBitSet(new BitSetImpl(windowSize), start, getWindowLength(start));
     bitset.getBitSet().setUniqueId(uniqueId);
     map.computeIfAbsent(uniqueId, k -> new ArrayList<>()).add(bitset);
     return bitset;
