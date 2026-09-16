@@ -26,8 +26,6 @@ import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class FileOffsetBitSet extends OffsetBitSet implements Closeable {
 
@@ -41,12 +39,19 @@ public class FileOffsetBitSet extends OffsetBitSet implements Closeable {
   @Setter
   private boolean allocated;
 
-  public FileOffsetBitSet(@NonNull @NotNull ByteBufferBackedBitMap bitSet, long position, long offset, @NonNull @NotNull BitSetFactory factory, int shardId) {
-    super(bitSet, offset);
+  public FileOffsetBitSet(@NonNull @NotNull ByteBufferBackedBitMap bitSet, long position, long offset,
+                          @NonNull @NotNull BitSetFactory factory, int shardId) {
+    this(bitSet, position, offset, bitSet.length(), factory, shardId, false);
+  }
+
+  public FileOffsetBitSet(@NonNull @NotNull ByteBufferBackedBitMap bitSet, long position, long offset,
+                          int logicalLength, @NonNull @NotNull BitSetFactory factory, int shardId,
+                          boolean allocated) {
+    super(bitSet, offset, logicalLength);
     this.factory = factory;
     this.position = position;
     this.shardId = shardId;
-    allocated = false;
+    this.allocated = allocated;
   }
 
   public long getUniqueId() {
@@ -55,30 +60,29 @@ public class FileOffsetBitSet extends OffsetBitSet implements Closeable {
 
   @Override
   public void close() {
-    allocated = false;
     factory.release(this);
   }
 
   @Override
   public void reset(long start, long uniqueId) {
-    if (uniqueId != -1 && allocated) {
-      Logger.getLogger(FileOffsetBitSet.class.getName()).log(Level.ALL, "Resetting offset bitset {0} on a currently allocated bitset", uniqueId);
-    }
-    allocated = uniqueId != -1;
     super.reset(start, uniqueId);
   }
 
+  @Override
+  public void reset(long start, long uniqueId, int logicalLength) {
+    super.reset(start, uniqueId, logicalLength);
+  }
 
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
     if (obj == null || getClass() != obj.getClass()) return false;
     FileOffsetBitSet other = (FileOffsetBitSet) obj;
-    return this.position == other.position && this.getShardId() == other.getShardId();
+    return position == other.position && shardId == other.shardId;
   }
 
   @Override
   public int hashCode() {
-    return Long.hashCode(position) * 31 + Long.hashCode(getShardId());
+    return Long.hashCode(position) * 31 + Integer.hashCode(shardId);
   }
 }
