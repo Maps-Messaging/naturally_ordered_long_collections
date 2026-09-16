@@ -45,7 +45,7 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
   @Override
   public Long remove() {
     Long response = poll();
-    if (response == null || response == -1) {
+    if (response == null) {
       throw new NoSuchElementException();
     }
     return response;
@@ -58,16 +58,13 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
     }
     OffsetBitSet current = tree.firstEntry().getValue();
 
-    long val = current.nextSetBitAndClear(current.getStart());
-    if (val != -1) {
-      //
-      // Check and see if this was the last entry in the bit set, if so then remove the entry
-      //
-      if (current.isEmpty() && tree.size() > 1) {
+    Long value = current.nextSetBitAndClear(current.getStart());
+    if (value != null) {
+      if (current.isEmpty()) {
         tree.remove(current.getStart());
         factory.release(current);
       }
-      return val;
+      return value;
     }
     tree.remove(current.getStart());
     factory.release(current);
@@ -76,7 +73,11 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
 
   @Override
   public Long element() {
-    return peek();
+    Long response = peek();
+    if (response == null) {
+      throw new NoSuchElementException();
+    }
+    return response;
   }
 
   @Override
