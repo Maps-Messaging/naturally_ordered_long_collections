@@ -20,10 +20,6 @@
 
 package io.mapsmessaging.utilities.collections.bitset;
 
-import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.And;
-import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.AndNot;
-import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.Or;
-import io.mapsmessaging.utilities.collections.bitset.BitWiseOperator.Xor;
 import lombok.NonNull;
 import lombok.ToString;
 import org.jetbrains.annotations.NotNull;
@@ -40,6 +36,9 @@ public class BitSetImpl implements BitSet {
   private java.util.BitSet bitSet;
 
   public BitSetImpl(int size) {
+    if (size <= 0) {
+      throw new IllegalArgumentException("BitSet size must be greater than 0");
+    }
     bitSet = new java.util.BitSet(size);
     capacity = size;
     uniqueId = 0;
@@ -87,7 +86,14 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public void flip(int fromIndex, int toIndex) {
-    int from = checkRangeBoundary(fromIndex);
+    if (fromIndex > toIndex) {
+      throw new IndexOutOfBoundsException("fromIndex must not be greater than toIndex");
+    }
+    if (fromIndex == toIndex) {
+      checkRangeBoundary(fromIndex);
+      return;
+    }
+    int from = checkBitBoundary(fromIndex);
     int to = checkRangeBoundary(toIndex);
     bitSet.flip(from, to);
   }
@@ -109,7 +115,11 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public int nextSetBit(int fromIndex) {
-    return bitSet.nextSetBit(fromIndex);
+    if (fromIndex < 0 || fromIndex >= capacity) {
+      return -1;
+    }
+    int result = bitSet.nextSetBit(fromIndex);
+    return result >= capacity ? -1 : result;
   }
 
   @Override
@@ -123,17 +133,28 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public int nextClearBit(int fromIndex) {
-    return bitSet.nextClearBit(fromIndex);
+    if (fromIndex < 0 || fromIndex >= capacity) {
+      return -1;
+    }
+    int result = bitSet.nextClearBit(fromIndex);
+    return result >= capacity ? -1 : result;
   }
 
   @Override
   public int previousSetBit(int fromIndex) {
-    return bitSet.previousSetBit(fromIndex);
+    if (fromIndex < 0) {
+      return -1;
+    }
+    return bitSet.previousSetBit(Math.min(fromIndex, capacity - 1));
   }
 
   @Override
   public int previousClearBit(int fromIndex) {
-    return bitSet.previousClearBit(fromIndex);
+    if (fromIndex < 0) {
+      return -1;
+    }
+    int result = bitSet.previousClearBit(Math.min(fromIndex, capacity - 1));
+    return result >= capacity ? -1 : result;
   }
 
   @Override
@@ -143,56 +164,47 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public void and(@NonNull @NotNull BitSet map) {
-    if (map instanceof BitSetImpl bitSetImpl) {
-      bitSet.and(bitSetImpl.bitSet);
-    } else if (map instanceof ByteBufferBackedBitMap byteBufferBackedBitMap) {
-      bitwiseCompute(byteBufferBackedBitMap, new And());
-    }
+    bitSet.and(asJavaBitSet(map));
+    trimToCapacity();
   }
 
   @Override
   public void xor(@NonNull @NotNull BitSet map) {
-    if (map instanceof BitSetImpl bitSetImpl) {
-      bitSet.xor(bitSetImpl.bitSet);
-    } else if (map instanceof ByteBufferBackedBitMap byteBufferBackedBitMap) {
-      bitwiseCompute(byteBufferBackedBitMap, new Xor());
-    }
+    bitSet.xor(asJavaBitSet(map));
+    trimToCapacity();
   }
 
   @Override
   public void or(@NonNull @NotNull BitSet map) {
-    if (map instanceof BitSetImpl bitSetImpl) {
-      bitSet.or(bitSetImpl.bitSet);
-    } else if (map instanceof ByteBufferBackedBitMap byteBufferBackedBitMap) {
-      bitwiseCompute(byteBufferBackedBitMap, new Or());
-    }
+    bitSet.or(asJavaBitSet(map));
+    trimToCapacity();
   }
 
   @Override
   public void andNot(@NonNull @NotNull BitSet map) {
-    if (map instanceof BitSetImpl bitSetImpl) {
-      bitSet.andNot(bitSetImpl.bitSet);
-    } else if (map instanceof ByteBufferBackedBitMap byteBufferBackedBitMap) {
-      bitwiseCompute(byteBufferBackedBitMap, new AndNot());
-    }
+    bitSet.andNot(asJavaBitSet(map));
+    trimToCapacity();
   }
 
-  private void bitwiseCompute(@NonNull @NotNull ByteBufferBackedBitMap map, @NonNull @NotNull BitWiseOperator operator) {
-    long[] longs = bitSet.toLongArray();
-    int longCount = map.getLongCount();
-    if (longs.length < longCount) {
-      var expanded = new long[longCount];
-      System.arraycopy(longs, 0, expanded, 0, longs.length);
-      longs = expanded;
+  private java.util.BitSet asJavaBitSet(BitSet map) {
+    if (map instanceof BitSetImpl bitSetImpl) {
+      return bitSetImpl.bitSet;
     }
+    if (map instanceof ByteBufferBackedBitMap byteBufferBackedBitMap) {
+      long[] values = new long[byteBufferBackedBitMap.getLongCount()];
+      for (int index = 0; index < values.length; index++) {
+        values[index] = byteBufferBackedBitMap.getLong(index);
+      }
+      return java.util.BitSet.valueOf(values);
+    }
+    throw new UnsupportedOperationException("Unable to perform bitwise operation from " + map.getClass());
+  }
 
-    int length = Math.min(map.getLongCount(), longs.length);
-    for (var x = 0; x < length; x++) {
-      var lhs = longs[x];
-      var rhs = map.getLong(x);
-      longs[x] = operator.operation(lhs, rhs);
+  private void trimToCapacity() {
+    int actualLength = bitSet.length();
+    if (actualLength > capacity) {
+      bitSet.clear(capacity, actualLength);
     }
-    bitSet = java.util.BitSet.valueOf(longs);
   }
 
   @Override
