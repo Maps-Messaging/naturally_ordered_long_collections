@@ -38,8 +38,13 @@ import java.util.Set;
 
 public class FileBitSetFactoryImpl extends BitSetFactory {
 
-  private static final int BITS_PER_BYTE = 8;
-  private static final int HEADER_SIZE = 16;
+  private static final long FILE_MAGIC = 0x4E4F4C4342495432L;
+  private static final int FILE_VERSION = 2;
+  private static final int FILE_HEADER_SIZE = Long.BYTES + Integer.BYTES + Integer.BYTES;
+  private static final int LEGACY_RECORD_HEADER_SIZE = Long.BYTES * 2;
+  private static final int RECORD_HEADER_SIZE = Long.BYTES * 3;
+  private static final long STATE_FREE = 0L;
+  private static final long STATE_ALLOCATED = 1L;
 
   private final List<FileOffsetBitSet> free;
   private final List<FileOffsetBitSet> used;
@@ -63,14 +68,11 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     closed = false;
     deleted = false;
     this.filename = filename;
-    bufferSize = size / BITS_PER_BYTE;
+    bufferSize = ((size + 63) / 64) * Long.BYTES;
     free = new ArrayList<>();
     used = new ArrayList<>();
-    var testFile = prepareBackingFile(filename);
+    File testFile = prepareBackingFile(filename);
     emptyBuffer = new byte[bufferSize];
-    for (var x = 0; x < bufferSize; x++) {
-      emptyBuffer[x] = 0;
-    }
 
     if (testFile.exists() && testFile.length() > 0) {
       raf = new RandomAccessFile(testFile, "rw");
@@ -79,32 +81,117 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
         deleteFiles();
       }
     } else {
-      deleted = true; // Mark it as being active but file has been deleted, allowing first operation to create it
+      deleted = true;
     }
   }
 
   @Override
   public String toString() {
-    return String.format("FileName:%s%n Size:%d%n Free:%d%n Used:%d%n Closed:%s%n Deleted:%s%n Shard:%d%n", filename, bufferSize, free.size(), used.size(), closed, deleted, shard);
+    return String.format("FileName:%s%n Size:%d%n Free:%d%n Used:%d%n Closed:%s%n Deleted:%s%n Shard:%d%n",
+        filename, bufferSize, free.size(), used.size(), closed, deleted, shard);
   }
 
   private void loadFile() throws IOException {
+    if (raf.length() == 0) {
+      writeFileHeader();
+      return;
+    }
+
+    raf.seek(0);
+    long marker = raf.readLong();
+    if (marker == FILE_MAGIC) {
+      int version = raf.readInt();
+      int persistedWindowSize = raf.readInt();
+      if (version != FILE_VERSION) {
+        throw new IOException("Unsupported bitset file version " + version);
+      }
+      if (persistedWindowSize != windowSize) {
+        throw new IOException(
+            "Bitset file window size " + persistedWindowSize + " does not match configured size " + windowSize);
+      }
+      loadVersion2();
+    } else {
+      migrateLegacyFile();
+    }
+  }
+
+  private void loadVersion2() throws IOException {
     long len = raf.length();
-    long pos = 0;
+    long recordSize = RECORD_HEADER_SIZE + (long) bufferSize;
+    long dataLength = len - FILE_HEADER_SIZE;
+    if (dataLength < 0 || dataLength % recordSize != 0) {
+      throw new IOException("Invalid version 2 bitset file length " + len);
+    }
+
+    long pos = FILE_HEADER_SIZE;
     while (pos < len) {
       raf.seek(pos);
+      long state = raf.readLong();
       long uniqueId = raf.readLong();
       long offset = raf.readLong();
-      pos += HEADER_SIZE;
-      ByteBufferBackedBitMap bitmap = map(pos, uniqueId);
-      FileOffsetBitSet bitset = new FileOffsetBitSet(bitmap, pos - HEADER_SIZE, offset, this, shard);
-      if (uniqueId != -1) {
+      long bitmapPosition = pos + RECORD_HEADER_SIZE;
+      ByteBufferBackedBitMap bitmap = map(bitmapPosition, uniqueId);
+      boolean allocated = state == STATE_ALLOCATED;
+      if (!allocated && state != STATE_FREE) {
+        throw new IOException("Invalid bitset record state " + state + " at position " + pos);
+      }
+      FileOffsetBitSet bitset = new FileOffsetBitSet(
+          bitmap, pos, offset, getWindowLength(offset), this, shard, allocated);
+      if (allocated) {
         used.add(bitset);
       } else {
         free.add(bitset);
       }
-      pos += bufferSize;
+      pos += recordSize;
     }
+  }
+
+  private void migrateLegacyFile() throws IOException {
+    int legacyBufferSize = windowSize / Byte.SIZE;
+    long legacyRecordSize = LEGACY_RECORD_HEADER_SIZE + (long) legacyBufferSize;
+    long length = raf.length();
+    if (legacyBufferSize <= 0 || length % legacyRecordSize != 0) {
+      throw new IOException("Unrecognised legacy bitset file format");
+    }
+
+    List<LegacyRecord> records = new ArrayList<>();
+    long pos = 0;
+    while (pos < length) {
+      raf.seek(pos);
+      long uniqueId = raf.readLong();
+      long offset = raf.readLong();
+      byte[] payload = new byte[legacyBufferSize];
+      raf.readFully(payload);
+      if (uniqueId != -1L) {
+        records.add(new LegacyRecord(uniqueId, offset, payload));
+      }
+      pos += legacyRecordSize;
+    }
+
+    raf.setLength(0);
+    writeFileHeader();
+    for (LegacyRecord record : records) {
+      long recordPosition = raf.length();
+      raf.seek(recordPosition);
+      raf.writeLong(STATE_ALLOCATED);
+      raf.writeLong(record.uniqueId());
+      raf.writeLong(record.offset());
+      raf.write(record.payload());
+      int padding = bufferSize - record.payload().length;
+      if (padding > 0) {
+        raf.write(new byte[padding]);
+      }
+    }
+    used.clear();
+    free.clear();
+    loadVersion2();
+  }
+
+  private void writeFileHeader() throws IOException {
+    raf.seek(0);
+    raf.writeLong(FILE_MAGIC);
+    raf.writeInt(FILE_VERSION);
+    raf.writeInt(windowSize);
   }
 
   @Override
@@ -129,14 +216,14 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   }
 
   public synchronized void cleanupIfPossible(long minSize) throws IOException {
-    if(used.isEmpty() && raf != null && raf.length() > minSize){
+    if (used.isEmpty() && raf != null && raf.length() > minSize) {
       deleteFiles();
     }
   }
 
   private synchronized void deleteFiles() throws IOException {
-    if(!used.isEmpty()){
-      return; // We have used bitmaps
+    if (!used.isEmpty()) {
+      return;
     }
     if (raf != null && raf.getChannel().isOpen()) {
       clearList(used);
@@ -158,17 +245,20 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   public synchronized OffsetBitSet open(long uniqueId, long offset) throws IOException {
     checkState();
     if (closed) throw new IllegalStateException("BitSet file is closed");
+
+    long start = getStartIndex(offset);
+    int logicalLength = getWindowLength(start);
     FileOffsetBitSet response;
-    offset = getStartIndex(offset);
     if (free.isEmpty()) {
-      long end = raf.length();
-      createRecord(end, uniqueId, offset);
-      ByteBufferBackedBitMap bitmap = map(end + HEADER_SIZE, uniqueId);
-      response = new FileOffsetBitSet(bitmap, end, offset, this, shard);
+      long position = raf.length();
+      createRecord(position, uniqueId, start);
+      ByteBufferBackedBitMap bitmap = map(position + RECORD_HEADER_SIZE, uniqueId);
+      response = new FileOffsetBitSet(bitmap, position, start, logicalLength, this, shard, true);
     } else {
       response = free.remove(0);
-      updateRecord(response.getPosition(), uniqueId, offset);
-      response.reset(offset, uniqueId);
+      updateRecord(response.getPosition(), STATE_ALLOCATED, uniqueId, start);
+      response.reset(start, uniqueId, logicalLength);
+      response.setAllocated(true);
     }
     used.add(response);
     return response;
@@ -182,33 +272,42 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   @Override
   public synchronized void release(@NonNull @NotNull OffsetBitSet bitset) {
     checkState();
-    try {
-      updateRecord(((FileOffsetBitSet) bitset).getPosition(), -1, 0);
-    } catch (IOException e) {
-      // Log this
+    FileOffsetBitSet fileBitSet = (FileOffsetBitSet) bitset;
+    if (!used.remove(fileBitSet)) {
+      return;
     }
-    used.remove(bitset);
-    bitset.reset(0, -1);
-    free.add((FileOffsetBitSet) bitset);
+    try {
+      updateRecord(fileBitSet.getPosition(), STATE_FREE, fileBitSet.getUniqueId(), fileBitSet.getStart());
+    } catch (IOException e) {
+      throw new IllegalStateException("Unable to mark bitset record free", e);
+    }
+    fileBitSet.clearAll();
+    fileBitSet.setAllocated(false);
+    free.add(fileBitSet);
   }
-
 
   @Override
   public List<OffsetBitSet> get(long uniqueId) {
     if (deleted) {
-      return new ArrayList<>(); // if the file is deleted, there are no bitsets, lets not open it
+      return new ArrayList<>();
     }
     checkState();
-    if (uniqueId == -1) {
-      return getList(free, uniqueId);
-    }
     return getList(used, uniqueId);
+  }
+
+  @Override
+  public List<OffsetBitSet> getFreeBitSets() {
+    if (deleted) {
+      return new ArrayList<>();
+    }
+    checkState();
+    return new ArrayList<>(free);
   }
 
   @Override
   public List<Long> getUniqueIds() {
     if (deleted) {
-      return new ArrayList<>(); // if the file is deleted, there are no unique ids, lets not open it
+      return new ArrayList<>();
     }
     checkState();
     Set<Long> ids = new LinkedHashSet<>();
@@ -243,17 +342,18 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
   private void createRecord(long position, long uniqueId, long offset) throws IOException {
     raf.seek(position);
+    raf.writeLong(STATE_ALLOCATED);
     raf.writeLong(uniqueId);
     raf.writeLong(offset);
     raf.write(emptyBuffer);
   }
 
-  private void updateRecord(long position, long uniqueId, long offset) throws IOException {
+  private void updateRecord(long position, long state, long uniqueId, long offset) throws IOException {
     raf.seek(position);
+    raf.writeLong(state);
     raf.writeLong(uniqueId);
     raf.writeLong(offset);
   }
-
 
   private void clearList(@NonNull @NotNull List<FileOffsetBitSet> list) {
     for (FileOffsetBitSet bitmap : list) {
@@ -282,10 +382,13 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     try {
       deleted = false;
       File file = prepareBackingFile(filename);
-      this.raf = new RandomAccessFile(file, "rw");
+      raf = new RandomAccessFile(file, "rw");
       loadFile();
     } catch (IOException e) {
       throw new IllegalStateException("Unable to reopen file", e);
     }
+  }
+
+  private record LegacyRecord(long uniqueId, long offset, byte[] payload) {
   }
 }
