@@ -23,612 +23,221 @@ package io.mapsmessaging.utilities.collections.bitset;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ListIterator;
 
 public abstract class OffsetBitSetTest {
 
-  public abstract  BitSet createBitSet();
+  public abstract BitSet createBitSet();
 
-  public OffsetBitSet createOffsetBitset(long offset){
+  public OffsetBitSet createOffsetBitset(long offset) {
     return new OffsetBitSet(createBitSet(), offset);
   }
 
   @Test
-  public void testBasicFunctions(){
+  void supportsOffsetsBeyondIntegerRange() {
     long offset = 1L << 32;
-    OffsetBitSet offsetBitSet = createOffsetBitset(offset); // Ensure long values are set and returned
+    OffsetBitSet bitSet = createOffsetBitset(offset);
 
-    for(int x=0;x<100;x++){
-      offsetBitSet.set(offset+x);
-      Assertions.assertTrue(offsetBitSet.isSet(offset+x));
+    for (int i = 0; i < 100; i++) {
+      bitSet.set(offset + i);
+      Assertions.assertTrue(bitSet.isSet(offset + i));
     }
 
-    Iterator<Long> itr = offsetBitSet.iterator();
-    long start = offset;
-    while(itr.hasNext()){
-      Assertions.assertEquals(start, itr.next());
-      start++;
+    long expected = offset;
+    for (long actual : bitSet) {
+      Assertions.assertEquals(expected++, actual);
     }
   }
 
   @Test
-  public void testGeneralFunctions(){
-    long offset = 64;
-    OffsetBitSet offsetBitSet = createOffsetBitset(offset); // Ensure long values are set and returned
+  void supportsNegativeOffsetsAndMinusOne() {
+    OffsetBitSet bitSet = createOffsetBitset(-8192L);
+    bitSet.set(-8192L);
+    bitSet.set(-4096L);
+    bitSet.set(-1L);
 
-    // Should fail
-    try {
-      offsetBitSet.set(0);
-      Assertions.fail("This should have failed");
-    } catch (IndexOutOfBoundsException e) {
-      // Correct behaviour
-    }
-
-
-    // Should fail
-    try {
-      offsetBitSet.set(offset+offsetBitSet.length()+1);
-      Assertions.fail("This should have failed");
-    } catch (IndexOutOfBoundsException e) {
-      // Correct behaviour
-    }
-
-    offsetBitSet.set(offset);
-    Assertions.assertTrue(offsetBitSet.isSet(offset));
-
-    offsetBitSet.set(offset+offsetBitSet.length()-1);
-    Assertions.assertTrue(offsetBitSet.isSet(offset+offsetBitSet.length()-1));
+    Assertions.assertEquals(Long.valueOf(-8192L), bitSet.nextSetBit(Long.MIN_VALUE));
+    Assertions.assertEquals(Long.valueOf(-4096L), bitSet.nextSetBit(-8191L));
+    Assertions.assertEquals(Long.valueOf(-1L), bitSet.nextSetBit(-4095L));
+    Assertions.assertNull(bitSet.nextSetBit(0L));
+    Assertions.assertTrue(bitSet.isSet(-1L));
   }
 
   @Test
-  public void testSimpleBitOperations(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-    bitmap.set(0);
-    Assertions.assertTrue(bitmap.isSet(0));
-    bitmap.set(63);
-    Assertions.assertTrue(bitmap.isSet(63));
-    bitmap.set(64);
-    Assertions.assertTrue(bitmap.isSet(64));
-    bitmap.set(127);
-    Assertions.assertTrue(bitmap.isSet(127));
-    bitmap.set(128);
-    Assertions.assertTrue(bitmap.isSet(128));
+  void supportsLongMinValueWindow() {
+    OffsetBitSet bitSet = createOffsetBitset(Long.MIN_VALUE);
+    bitSet.set(Long.MIN_VALUE);
+    bitSet.set(Long.MIN_VALUE + bitSet.length() - 1L);
 
-    bitmap.clear(0);
-    Assertions.assertFalse(bitmap.isSet(0));
-    bitmap.clear(63);
-    Assertions.assertFalse(bitmap.isSet(63));
-    Assertions.assertTrue(bitmap.isSet(64));
-    Assertions.assertTrue(bitmap.isSet(127));
-    Assertions.assertTrue(bitmap.isSet(128));
-
-    bitmap.clear();
-
-    bitmap.set(1);
-    Assertions.assertTrue(bitmap.isSet(1));
-    Assertions.assertFalse(bitmap.isSet(0));
-    Assertions.assertFalse(bitmap.isSet(2));
-    bitmap.flip(1);
-    Assertions.assertFalse(bitmap.isSet(0));
-    Assertions.assertFalse(bitmap.isSet(1));
-    Assertions.assertFalse(bitmap.isSet(2));
-
-
-    bitmap.flip(1);
-    Assertions.assertTrue(bitmap.isSet(1));
-    Assertions.assertFalse(bitmap.isSet(0));
-    Assertions.assertFalse(bitmap.isSet(2));
-    bitmap.flip(1);
-    Assertions.assertFalse(bitmap.isSet(0));
-    Assertions.assertFalse(bitmap.isSet(1));
-    Assertions.assertFalse(bitmap.isSet(2));
-  }
-
-
-  @Test
-  public void testClearing(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-    long bitCount = bitmap.length();
-    for(int x=0;x<bitCount;x++){
-      bitmap.set(x);
-      Assertions.assertTrue(bitmap.isSet(x));
-    }
-    Assertions.assertFalse(bitmap.isEmpty());
-    bitmap.clear();
-    for(int x=0;x<bitCount;x++){
-      Assertions.assertFalse(bitmap.isSet(x));
-    }
-    Assertions.assertTrue(bitmap.isEmpty());
-  }
-
-
-  @Test
-  public void testNextSetAndClear(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-    long bitCount = bitmap.length();
-    for(int x=0;x<bitCount;x++){
-      bitmap.set(x);
-      Assertions.assertTrue(bitmap.isSet(x));
-    }
-    for(int x=0;x<bitCount;x++){
-      Assertions.assertNotEquals(-1, bitmap.nextSetBitAndClear(0));
-    }
-    for(int x=0;x<bitCount;x++){
-      Assertions.assertFalse(bitmap.isSet(x));
-    }
-  }
-
-
-  @Test
-  public void testFlipping(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-    long bitCount = bitmap.length();
-    for(int x=0;x<bitCount;x++){
-      bitmap.flip(x);
-      Assertions.assertTrue(bitmap.isSet(x));
-    }
-    for(int x=0;x<bitCount;x++){
-      bitmap.flip(x);
-      Assertions.assertFalse(bitmap.isSet(x));
-    }
+    Assertions.assertEquals(Long.valueOf(Long.MIN_VALUE), bitSet.nextSetBit(Long.MIN_VALUE));
+    Assertions.assertEquals(
+        Long.valueOf(Long.MIN_VALUE + bitSet.length() - 1L),
+        bitSet.previousSetBit(Long.MIN_VALUE + bitSet.length() - 1L));
   }
 
   @Test
-  void testFlipRange() {
-    OffsetBitSet bitmap = createOffsetBitset(0);
-    int bits = bitmap.length();
+  void supportsLongMaxValue() {
+    int physicalLength = createBitSet().length();
+    long start = Long.MAX_VALUE - physicalLength + 1L;
+    OffsetBitSet bitSet = createOffsetBitset(start);
+    bitSet.set(start);
+    bitSet.set(Long.MAX_VALUE);
 
-    // Initially all false
-    for (int i = 0; i < bits; i++) {
-      Assertions.assertFalse(bitmap.isSet(i));
-    }
-
-    // Flip a range
-    bitmap.flip(10, 20);
-
-    for (int i = 0; i < bits; i++) {
-      if (i >= 10 && i < 20) {
-        Assertions.assertTrue(bitmap.isSet(i), "Expected bit " + i + " to be set");
-      } else {
-        Assertions.assertFalse(bitmap.isSet(i), "Expected bit " + i + " to be clear");
-      }
-    }
-
-    // Flip again, should clear
-    bitmap.flip(10, 20);
-
-    for (int i = 0; i < bits; i++) {
-      Assertions.assertFalse(bitmap.isSet(i), "Expected bit " + i + " to be clear after second flip");
-    }
-  }
-
-
-  @Test
-  public void testRangedFlipping(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-
-    long bitCount = bitmap.length();
-    bitmap.flip(1, 24);
-    Assertions.assertFalse(bitmap.isSet(0));
-
-    for(int x=1; x<24;x++){
-      Assertions.assertTrue(bitmap.isSet(x));
-    }
-
-    for(int x=25; x<bitCount;x++){
-      Assertions.assertFalse(bitmap.isSet(x));
-    }
+    Assertions.assertEquals(Long.valueOf(start), bitSet.nextSetBit(start));
+    Assertions.assertEquals(Long.valueOf(Long.MAX_VALUE), bitSet.previousSetBit(Long.MAX_VALUE));
+    Assertions.assertTrue(bitSet.isSet(Long.MAX_VALUE));
   }
 
   @Test
-  public void testFindSetBit(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-    bitmap.set(0);
-    Assertions.assertEquals(1, bitmap.cardinality());
-    bitmap.set(63);
-    Assertions.assertEquals(2, bitmap.cardinality());
-    bitmap.set(64);
-    Assertions.assertEquals(3, bitmap.cardinality());
-    bitmap.set(127);
-    Assertions.assertEquals(4, bitmap.cardinality());
-    bitmap.set(128);
-    Assertions.assertEquals(5, bitmap.cardinality());
-    Assertions.assertEquals(0, bitmap.nextSetBit(0));
-    bitmap.clear(0);
-    Assertions.assertEquals(63, bitmap.nextSetBit(0));
-    bitmap.clear(63);
-    Assertions.assertEquals(64, bitmap.nextSetBit(0));
-    bitmap.clear(64);
-    Assertions.assertEquals(127, bitmap.nextSetBit(0));
-    bitmap.clear(127);
-    Assertions.assertEquals(128, bitmap.nextSetBit(0));
-    bitmap.clear(128);
-    Assertions.assertEquals(-1, bitmap.nextSetBit(0));
+  void truncatesLogicalWindowAtLongMaxValue() {
+    OffsetBitSet bitSet = createOffsetBitset(Long.MAX_VALUE);
+    Assertions.assertEquals(1, bitSet.length());
+    Assertions.assertTrue(bitSet.set(Long.MAX_VALUE));
+    Assertions.assertThrows(IndexOutOfBoundsException.class, () -> bitSet.set(Long.MAX_VALUE - 1));
   }
 
   @Test
-  public void testFindClearBit(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-    long bitCount = bitmap.length();
-    for(int x=0;x<bitCount;x++){
-      bitmap.set(x);
-    }
-    bitmap.clear(128);
-    Assertions.assertEquals(128, bitmap.nextClearBit(0));
+  void rejectsValuesOutsideWindowWithoutOverflow() {
+    OffsetBitSet bitSet = createOffsetBitset(64L);
+    Assertions.assertThrows(IndexOutOfBoundsException.class, () -> bitSet.set(63L));
+    Assertions.assertThrows(
+        IndexOutOfBoundsException.class,
+        () -> bitSet.set(64L + bitSet.length()));
   }
 
   @Test
-  public void testFindPreviousSetBit(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-    bitmap.set(128);
-    Assertions.assertEquals(1, bitmap.cardinality());
-    int bitCount = bitmap.length()-1;
-    Assertions.assertEquals(128, bitmap.previousSetBit(bitCount));
+  void absoluteSearchUsesNullForNoResult() {
+    OffsetBitSet bitSet = createOffsetBitset(-64L);
+    Assertions.assertNull(bitSet.nextSetBit(-64L));
+    Assertions.assertNull(bitSet.previousSetBit(-64L));
+
+    bitSet.set(-1L);
+    Assertions.assertEquals(Long.valueOf(-1L), bitSet.nextSetBit(-64L));
+    Assertions.assertEquals(Long.valueOf(-1L), bitSet.nextSetBitAndClear(-64L));
+    Assertions.assertNull(bitSet.nextSetBit(-64L));
   }
 
   @Test
-  public void testFindPreviousClearBit(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-    int bitCount = bitmap.length();
-    for(int x=0;x<bitCount;x++){
-      bitmap.set(x);
-    }
+  void clearFlipAndRangeOperationsUseAbsoluteValues() {
+    OffsetBitSet bitSet = createOffsetBitset(-1000L);
+    bitSet.set(-999L);
+    Assertions.assertTrue(bitSet.isSet(-999L));
+    Assertions.assertTrue(bitSet.clear(-999L));
+    Assertions.assertFalse(bitSet.isSet(-999L));
 
-    bitmap.clear(128);
-    Assertions.assertEquals(bitmap.length()-1, bitmap.cardinality());
-    bitCount = bitmap.length()-1;
-    Assertions.assertEquals(128, bitmap.previousClearBit(bitCount));
+    bitSet.flip(-990L);
+    Assertions.assertTrue(bitSet.isSet(-990L));
+    bitSet.flip(-990L);
+    Assertions.assertFalse(bitSet.isSet(-990L));
+
+    bitSet.flip(-980L, -970L);
+    for (long value = -980L; value < -970L; value++) {
+      Assertions.assertTrue(bitSet.isSet(value));
+    }
+    Assertions.assertFalse(bitSet.isSet(-969L));
   }
 
   @Test
-  public void testBitWiseANDOperations(){
-    OffsetBitSet bitmap1 = createOffsetBitset(0);
-    OffsetBitSet bitmap2 = createOffsetBitset(0);
-
-    int bitCount = bitmap1.length();
-    for(int x=0;x<bitCount;x++){
-      if(x%2 == 0){
-        bitmap1.set(x);
-      }
-      else{
-        bitmap2.set(x);
-      }
+  void nextAndPreviousClearBitStayWithinLogicalWindow() {
+    OffsetBitSet bitSet = createOffsetBitset(-128L);
+    for (int i = 0; i < bitSet.length(); i++) {
+      bitSet.set(-128L + i);
     }
+    bitSet.clear(-64L);
 
-    //
-    // ANDing the bitmaps should result in ALL bits not set in bitmap1
-    //
-    bitmap1.and(bitmap2.rawBitSet);
-    for(int x=0;x<bitCount;x++) {
-      Assertions.assertFalse(bitmap1.isSet(x));
-    }
-
-    bitmap1.clear();
-    bitmap2.clear();
-    for(int x=0;x<bitCount;x++){
-      int test = (x%3);
-      if(test == 0){
-        bitmap1.set(x);
-      }
-      else if(test == 1){
-        bitmap2.set(x);
-      }
-      else{
-        bitmap1.set(x);
-        bitmap2.set(x);
-      }
-    }
-
-    //
-    // ANDing should result in every 3rd bit remaining set
-    //
-    bitmap1.and(bitmap2.rawBitSet);
-    for(int x=0;x<bitCount;x++) {
-      if(x%3 == 2) {
-        Assertions.assertTrue(bitmap1.isSet(x));
-      }
-      else{
-        Assertions.assertFalse(bitmap1.isSet(x));
-      }
-    }
+    Assertions.assertEquals(Long.valueOf(-64L), bitSet.nextClearBit(-128L));
+    Assertions.assertEquals(Long.valueOf(-64L), bitSet.previousClearBit(-1L));
   }
 
   @Test
-  public void testBitWiseOROperations(){
-    OffsetBitSet bitmap1 = createOffsetBitset(0);
-    OffsetBitSet bitmap2 = createOffsetBitset(0);
+  void bitwiseOperationsRemainLocalToMatchingWindows() {
+    long start = -8192L;
+    OffsetBitSet lhs = createOffsetBitset(start);
+    OffsetBitSet rhs = createOffsetBitset(start);
 
-    long bitCount = bitmap1.length();
-    for(int x=0;x<bitCount;x++){
-      if(x%2 == 0){
-        bitmap1.set(x);
-      }
-      else{
-        bitmap2.set(x);
-      }
-    }
+    lhs.set(start);
+    lhs.set(start + 2);
+    rhs.set(start + 1);
+    rhs.set(start + 2);
 
-    //
-    // ORing the bitmaps should result in ALL bits set in bitmap1
-    //
-    bitmap1.or(bitmap2.rawBitSet);
-    for(int x=0;x<bitCount;x++) {
-      Assertions.assertTrue(bitmap1.isSet(x));
-    }
+    OffsetBitSet and = createOffsetBitset(start);
+    and.set(start);
+    and.set(start + 2);
+    and.and(rhs.getBitSet());
+    Assertions.assertFalse(and.isSet(start));
+    Assertions.assertTrue(and.isSet(start + 2));
 
-    bitmap1.clear();
-    bitmap2.clear();
-    for(int x=0;x<bitCount;x++){
-      int test = (x%3);
-      if(test == 0){
-        bitmap1.set(x);
-      }
-      else if(test == 1){
-        bitmap2.set(x);
-      }
-    }
+    lhs.or(rhs.getBitSet());
+    Assertions.assertTrue(lhs.isSet(start));
+    Assertions.assertTrue(lhs.isSet(start + 1));
+    Assertions.assertTrue(lhs.isSet(start + 2));
 
-    //
-    // ANDing should result in every 3rd bit remaining set
-    //
-    bitmap1.or(bitmap2.rawBitSet);
-    for(int x=0;x<bitCount;x++) {
-      if(x%3 == 2) {
-        Assertions.assertFalse(bitmap1.isSet(x));
-      }
-      else{
-        Assertions.assertTrue(bitmap1.isSet(x));
-      }
-    }
+    lhs.xor(rhs.getBitSet());
+    Assertions.assertTrue(lhs.isSet(start));
+    Assertions.assertFalse(lhs.isSet(start + 1));
+    Assertions.assertFalse(lhs.isSet(start + 2));
+
+    lhs.set(start + 1);
+    lhs.set(start + 2);
+    lhs.andNot(rhs.getBitSet());
+    Assertions.assertTrue(lhs.isSet(start));
+    Assertions.assertFalse(lhs.isSet(start + 1));
+    Assertions.assertFalse(lhs.isSet(start + 2));
   }
 
   @Test
-  public void testListIterator(){
-    OffsetBitSet bitSet = createOffsetBitset(0);
-
-
-    int[] test = {0, 2, 5, 10, 100, 200};
-
-    for(int set:test){
-      bitSet.set(set);
+  void iteratorReturnsSignedAbsoluteValuesInOrder() {
+    OffsetBitSet bitSet = createOffsetBitset(-8192L);
+    List<Long> expected = List.of(-8192L, -4096L, -1L);
+    for (long value : expected) {
+      bitSet.set(value);
     }
 
-    ListIterator<Long> itr = bitSet.listIterator();
-    for (int i : test) {
-      Assertions.assertTrue(itr.hasNext());
-      Assertions.assertEquals(itr.next(), i);
+    List<Long> actual = new ArrayList<>();
+    Iterator<Long> iterator = bitSet.iterator();
+    while (iterator.hasNext()) {
+      actual.add(iterator.next());
     }
-
-    Assertions.assertFalse(itr.hasNext());
-    for(int i=test.length-1;i>0;i--){
-      Assertions.assertTrue(itr.hasPrevious());
-      Assertions.assertEquals(itr.previous(), test[i]);
-    }
-
+    Assertions.assertEquals(expected, actual);
   }
 
   @Test
-  public void testBitWiseXOROperations(){
-    OffsetBitSet bitmap1 = createOffsetBitset(0);
-    OffsetBitSet bitmap2 = createOffsetBitset(0);
-
-    long bitCount = bitmap1.length();
-    for(int x=0;x<bitCount;x++){
-      if(x%2 == 0){
-        bitmap1.set(x);
-      }
-      else{
-        bitmap2.set(x);
-      }
+  void listIteratorTraversesSignedValuesBothDirections() {
+    OffsetBitSet bitSet = createOffsetBitset(-8192L);
+    List<Long> expected = List.of(-8192L, -4096L, -1L);
+    for (long value : expected) {
+      bitSet.set(value);
     }
 
-    //
-    // XORing the bitmaps should result in ALL bits set in bitmap1
-    //
-    bitmap1.xor(bitmap2.rawBitSet);
-    for(int x=0;x<bitCount;x++) {
-      Assertions.assertTrue(bitmap1.isSet(x));
+    ListIterator<Long> iterator = bitSet.listIterator();
+    List<Long> forward = new ArrayList<>();
+    while (iterator.hasNext()) {
+      forward.add(iterator.next());
     }
+    Assertions.assertEquals(expected, forward);
 
-    bitmap1.clear();
-    bitmap2.clear();
-    for(int x=0;x<bitCount;x++){
-      int test = (x%4);
-      if(test == 0){
-        bitmap1.set(x);
-      }
-      else if(test == 1){
-        bitmap2.set(x);
-      }
-      else if(test == 2){
-        bitmap1.set(x);
-        bitmap2.set(x);
-      }
+    List<Long> reverse = new ArrayList<>();
+    while (iterator.hasPrevious()) {
+      reverse.add(iterator.previous());
     }
-
-    //
-    // XORing should result in every 3rd bit remaining set
-    //
-    bitmap1.xor(bitmap2.rawBitSet);
-    for(int x=0;x<bitCount;x++) {
-      if(x%4 == 0 || x%4 == 1) { // XOR so only true if either one or the other is true not both
-        Assertions.assertTrue(bitmap1.isSet(x));
-      }
-      else{
-        Assertions.assertFalse(bitmap1.isSet(x));
-      }
-    }
-
+    Assertions.assertEquals(List.of(-1L, -4096L, -8192L), reverse);
   }
 
   @Test
-  public void testBitWiseANDNOTOperations(){
-    OffsetBitSet bitmap1 = createOffsetBitset(0);
-    OffsetBitSet bitmap2 = createOffsetBitset(0);
+  void compareToDoesNotOverflowAcrossSignedExtrema() {
+    OffsetBitSet low = new OffsetBitSet(new BitSetImpl(64), Long.MIN_VALUE);
+    OffsetBitSet high = new OffsetBitSet(new BitSetImpl(64), Long.MAX_VALUE);
 
-    long bitCount = bitmap1.length();
-    for(int x=0;x<bitCount;x++){
-      if(x%2 == 0){
-        bitmap1.set(x);
-      }
-      else{
-        bitmap2.set(x);
-      }
-    }
-
-    //
-    // AND_NOTing the bitmaps should result in no bit changes in bitmap1 since there is no overlap
-    //
-    bitmap1.andNot(bitmap2.rawBitSet);
-    for(int x=0;x<bitCount;x++) {
-      if(x%2 == 0) {
-        Assertions.assertTrue(bitmap1.isSet(x));
-      }
-      else{
-        Assertions.assertFalse(bitmap1.isSet(x));
-      }
-    }
-
-    bitmap1.clear();
-    bitmap2.clear();
-    for(int x=0;x<bitCount;x++){
-      int test = (x%4);
-      if(test == 0){
-        bitmap1.set(x);
-      }
-      else if(test == 1){
-        bitmap2.set(x);
-      }
-      else if(test == 2){
-        bitmap1.set(x);
-        bitmap2.set(x);
-      }
-      else{
-        bitmap1.clear(x);
-        bitmap2.clear(x);
-      }
-    }
-
-    //
-    // ANDing should result in every 3rd bit remaining set
-    //
-    bitmap1.andNot(bitmap2.rawBitSet);
-    for(int x=0;x<bitCount;x++) {
-      if(x%4 == 0) {
-        Assertions.assertTrue(bitmap1.isSet(x));
-      }
-      else{
-        Assertions.assertFalse(bitmap1.isSet(x));
-      }
-    }
-  }
-
-
-  @Test
-  public void testExceptions(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-
-    try{
-      bitmap.set(-1);
-      Assertions.fail("This should have thrown an exception");
-    }
-    catch(IndexOutOfBoundsException correct){
-      // Correct behaviour
-    }
-
-    try{
-      bitmap.set((1+bitmap.length()));
-      Assertions.fail("This should have thrown an exception");
-    }
-    catch(IndexOutOfBoundsException correct){
-      // Correct behaviour
-    }
-
-    try{
-      bitmap.clear(-1);
-      Assertions.fail("This should have thrown an exception");
-    }
-    catch(IndexOutOfBoundsException correct){
-      // Correct behaviour
-    }
-
-    try{
-      bitmap.clear((1+bitmap.length()));
-      Assertions.fail("This should have thrown an exception");
-    }
-    catch(IndexOutOfBoundsException correct){
-      // Correct behaviour
-    }
-
-    try{
-      bitmap.isSet(-1);
-      Assertions.fail("This should have thrown an exception");
-    }
-    catch(IndexOutOfBoundsException correct){
-      // Correct behaviour
-    }
-
-    try{
-      bitmap.isSet((1+bitmap.length()));
-      Assertions.fail("This should have thrown an exception");
-    }
-    catch(IndexOutOfBoundsException correct){
-      // Correct behaviour
-    }
+    Assertions.assertTrue(low.compareTo(high) < 0);
+    Assertions.assertTrue(high.compareTo(low) > 0);
   }
 
   @Test
-  public void testIterator(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-
-    int[] test = {0, 2, 5, 10, 100, 200};
-
-    for(int set:test){
-      bitmap.set(set);
-    }
-
-    Iterator<Long> iterator = bitmap.iterator();
-    int idx = 0;
-    while(iterator.hasNext()){
-      Assertions.assertEquals(test[idx], iterator.next());
-      idx++;
-    }
-
-    bitmap.clear();
-    for(int x=0;x<bitmap.length();x++){
-      bitmap.set(x);
-    }
-
-    iterator = bitmap.iterator();
-    idx = 0;
-    while(iterator.hasNext()){
-      long next = iterator.next();
-      Assertions.assertEquals(idx, next);
-      idx++;
-    }
-
-    bitmap = createOffsetBitset(0);
-
-    for(int x=0;x<bitmap.length();x++){
-      bitmap.set(x);
-    }
-
-    iterator = bitmap.iterator();
-    idx = 0;
-    while(iterator.hasNext()){
-      long next = iterator.next();
-      Assertions.assertEquals(idx, next);
-      idx++;
-    }
+  void reportsNormalExclusiveEndWithoutUsingItForMembership() {
+    OffsetBitSet bitSet = createOffsetBitset(0L);
+    Assertions.assertEquals(bitSet.length(), bitSet.getEnd());
   }
-
-
-  @Test
-  public void checkGetFunctions(){
-    OffsetBitSet bitmap = createOffsetBitset(0);
-    Assertions.assertEquals(0, bitmap.getStart());
-    Assertions.assertEquals(1024*8, bitmap.getEnd());
-  }
-
 }
