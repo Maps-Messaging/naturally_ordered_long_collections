@@ -39,7 +39,7 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
       throw new IllegalArgumentException("shardCount must be greater than 0");
     }
     this.shardCount = shardCount;
-    this.shards = new FileBitSetFactoryImpl[shardCount];
+    shards = new FileBitSetFactoryImpl[shardCount];
 
     for (int i = 0; i < shardCount; i++) {
       String shardFile = baseFilename + "_" + i;
@@ -55,29 +55,30 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    for (FileBitSetFactoryImpl f : shards) {
-      sb.append(f.toString()).append("\n");
+    for (FileBitSetFactoryImpl factory : shards) {
+      sb.append(factory).append("\n");
     }
     return sb.toString();
   }
 
   @Override
   public List<OffsetBitSet> get(long uniqueId) {
-    if (uniqueId < 0) {
-      List<OffsetBitSet> bitSets = new ArrayList<>();
-      for (var shard : shards) {
-        bitSets.addAll(shard.get(-1));
-      }
-      return bitSets;
-    }
     return computeShard(uniqueId).get(uniqueId);
   }
 
+  @Override
+  public List<OffsetBitSet> getFreeBitSets() {
+    List<OffsetBitSet> bitSets = new ArrayList<>();
+    for (FileBitSetFactoryImpl shard : shards) {
+      bitSets.addAll(shard.getFreeBitSets());
+    }
+    return bitSets;
+  }
 
   @Override
   public List<Long> getUniqueIds() {
     List<Long> result = new ArrayList<>();
-    for (var shard : shards) {
+    for (FileBitSetFactoryImpl shard : shards) {
       result.addAll(shard.getUniqueIds());
     }
     return result;
@@ -96,14 +97,14 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public void close() throws IOException {
-    for (var shard : shards) {
+    for (FileBitSetFactoryImpl shard : shards) {
       shard.close();
     }
   }
 
   @Override
   public void delete() throws IOException {
-    for (var shard : shards) {
+    for (FileBitSetFactoryImpl shard : shards) {
       shard.delete();
     }
   }
