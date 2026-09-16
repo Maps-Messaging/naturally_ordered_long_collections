@@ -73,11 +73,7 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
 
   @Override
   public Long element() {
-    Long response = peek();
-    if (response == null) {
-      throw new NoSuchElementException();
-    }
-    return response;
+    return peek();
   }
 
   @Override
