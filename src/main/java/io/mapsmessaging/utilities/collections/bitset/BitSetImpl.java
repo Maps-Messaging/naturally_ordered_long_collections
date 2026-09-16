@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Iterator;
 import java.util.ListIterator;
 
-@SuppressWarnings("squid:S7027") // ByteBufferBackedBitMap is used here but only to access internal functions for speed
+@SuppressWarnings("squid:S7027")
 @ToString
 public class BitSetImpl implements BitSet {
 
@@ -41,6 +41,9 @@ public class BitSetImpl implements BitSet {
   private java.util.BitSet bitSet;
 
   public BitSetImpl(int size) {
+    if (size <= 0) {
+      throw new IllegalArgumentException("BitSet size must be greater than 0");
+    }
     bitSet = new java.util.BitSet(size);
     capacity = size;
     uniqueId = 0;
@@ -52,15 +55,17 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public boolean set(int bit) {
-    boolean previous = bitSet.get(checkBoundary(bit));
-    bitSet.set(checkBoundary(bit));
+    int index = checkBoundary(bit);
+    boolean previous = bitSet.get(index);
+    bitSet.set(index);
     return !previous;
   }
 
   @Override
   public boolean clear(int bit) {
-    boolean previous = bitSet.get(checkBoundary(bit));
-    bitSet.clear(checkBoundary(bit));
+    int index = checkBoundary(bit);
+    boolean previous = bitSet.get(index);
+    bitSet.clear(index);
     return previous;
   }
 
@@ -85,7 +90,10 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public void flip(int fromIndex, int toIndex) {
-    bitSet.flip(checkBoundary(fromIndex), checkBoundary(toIndex));
+    if (fromIndex > toIndex) {
+      throw new IndexOutOfBoundsException("fromIndex must not be greater than toIndex");
+    }
+    bitSet.flip(checkBoundary(fromIndex), checkRangeEnd(toIndex));
   }
 
   @Override
@@ -105,7 +113,11 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public int nextSetBit(int fromIndex) {
-    return bitSet.nextSetBit(fromIndex);
+    if (fromIndex < 0 || fromIndex >= capacity) {
+      return -1;
+    }
+    int result = bitSet.nextSetBit(fromIndex);
+    return result >= capacity ? -1 : result;
   }
 
   @Override
@@ -119,17 +131,28 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public int nextClearBit(int fromIndex) {
-    return bitSet.nextClearBit(fromIndex);
+    if (fromIndex < 0 || fromIndex >= capacity) {
+      return -1;
+    }
+    int result = bitSet.nextClearBit(fromIndex);
+    return result >= capacity ? -1 : result;
   }
 
   @Override
   public int previousSetBit(int fromIndex) {
-    return bitSet.previousSetBit(fromIndex);
+    if (fromIndex < 0) {
+      return -1;
+    }
+    return bitSet.previousSetBit(Math.min(fromIndex, capacity - 1));
   }
 
   @Override
   public int previousClearBit(int fromIndex) {
-    return bitSet.previousClearBit(fromIndex);
+    if (fromIndex < 0) {
+      return -1;
+    }
+    int result = bitSet.previousClearBit(Math.min(fromIndex, capacity - 1));
+    return result >= capacity ? -1 : result;
   }
 
   @Override
@@ -197,12 +220,17 @@ public class BitSetImpl implements BitSet {
   }
 
   private int checkBoundary(int bit) {
-    //
-    // Must be within range
-    //
+    if (bit < 0 || bit >= capacity) {
+      throw new IndexOutOfBoundsException(
+          "Expecting range from 0 to " + (capacity - 1) + " received " + bit);
+    }
+    return bit;
+  }
+
+  private int checkRangeEnd(int bit) {
     if (bit < 0 || bit > capacity) {
       throw new IndexOutOfBoundsException(
-          "Expecting range from 0 to " + (capacity) + " received " + bit);
+          "Expecting range end from 0 to " + capacity + " received " + bit);
     }
     return bit;
   }
@@ -221,5 +249,4 @@ public class BitSetImpl implements BitSet {
   public void setUniqueId(long uniqueId) {
     this.uniqueId = uniqueId;
   }
-
 }
