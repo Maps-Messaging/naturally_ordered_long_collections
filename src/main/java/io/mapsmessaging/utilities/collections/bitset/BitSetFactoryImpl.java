@@ -31,7 +31,8 @@ public class BitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public OffsetBitSet open(long uniqueId, long id) {
-    return new OffsetBitSet(new BitSetImpl(windowSize), getStartIndex(id));
+    long start = getStartIndex(id);
+    return new OffsetBitSet(new BitSetImpl(windowSize), start, getWindowLength(start));
   }
 
   @Override
