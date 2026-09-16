@@ -32,25 +32,25 @@ import java.nio.file.Paths;
 
 class NaturalOrderedLongQueueTest {
 
-
-  protected NaturalOrderedLongQueue build(long id, BitSetFactory factory ){
+  protected NaturalOrderedLongQueue build(long id, BitSetFactory factory) {
     return new NaturalOrderedLongQueue(id, factory);
   }
+
   @Test
-  void simplePollOfferTest(){
+  void simplePollOfferTest() {
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(4096);
     NaturalOrderedLongQueue noll = build(0, factory);
-    for(long x=8192;x<2*8192;x++) {
+    for (long x = 8192; x < 2 * 8192; x++) {
       noll.offer(x);
     }
 
-    for(long x=0;x<8192;x++) {
+    for (long x = 0; x < 8192; x++) {
       noll.offer(x);
     }
     int counter = noll.size();
     Assertions.assertNotEquals(counter, 0);
     int start = 0;
-    while(!noll.isEmpty()){
+    while (!noll.isEmpty()) {
       long ele = noll.element();
       long poll = noll.poll();
       Assertions.assertEquals(ele, poll);
@@ -60,20 +60,20 @@ class NaturalOrderedLongQueueTest {
   }
 
   @Test
-  void simpleAddRemoveTest(){
+  void simpleAddRemoveTest() {
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(4096);
     NaturalOrderedLongQueue noll = build(0, factory);
-    for(long x=8192;x<2*8192;x++) {
+    for (long x = 8192; x < 2 * 8192; x++) {
       noll.add(x);
     }
 
-    for(long x=0;x<8192;x++) {
+    for (long x = 0; x < 8192; x++) {
       noll.offer(x);
     }
     int counter = noll.size();
     Assertions.assertNotEquals(counter, 0);
     int start = 0;
-    while(!noll.isEmpty()){
+    while (!noll.isEmpty()) {
       Assertions.assertEquals(start, noll.remove());
       start++;
     }
@@ -88,7 +88,6 @@ class NaturalOrderedLongQueueTest {
     FileBitSetFactoryImpl factory = new FileBitSetFactoryImpl(filename, windowSize);
 
     try {
-      // Phase 1: Allocate queues and distribute events
       NaturalOrderedLongQueue[] queues = new NaturalOrderedLongQueue[sessionCount];
 
       for (int i = 0; i < sessionCount; i++) {
@@ -96,13 +95,12 @@ class NaturalOrderedLongQueueTest {
       }
 
       for (long eventId = 0; eventId < totalEvents; eventId++) {
-        int sessionIndex = (int)(eventId % sessionCount);
+        int sessionIndex = (int) (eventId % sessionCount);
         queues[sessionIndex].offer(eventId);
       }
 
       factory.close();
 
-      // Phase 2: Reload and verify persistence
       factory = new FileBitSetFactoryImpl(filename, windowSize);
       queues = new NaturalOrderedLongQueue[sessionCount];
       for (int i = 0; i < sessionCount; i++) {
@@ -121,28 +119,22 @@ class NaturalOrderedLongQueueTest {
         Assertions.assertTrue(count > 0);
       }
 
-      // Phase 3: Release a few queues, verify increase in free list
-      int initialFreeSize = factory.get(-1).size();
+      int initialFreeSize = factory.getFreeBitSets().size();
 
-      // Release half the queues
       for (int i = 0; i < sessionCount; i += 2) {
         queues[i].clear();
       }
 
-      int increasedFreeSize = factory.get(-1).size();
+      int increasedFreeSize = factory.getFreeBitSets().size();
       Assertions.assertTrue(increasedFreeSize > initialFreeSize);
 
-      // Phase 4: Reuse a closed session ID and verify it is empty
       NaturalOrderedLongQueue reusedQueue = build(0, factory);
       Assertions.assertTrue(reusedQueue.isEmpty());
       reusedQueue.offer(99999L);
       Assertions.assertEquals(99999, reusedQueue.poll());
-
     } finally {
       factory.close();
       Files.deleteIfExists(Paths.get(filename));
     }
   }
-
-
 }
