@@ -28,7 +28,14 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -36,11 +43,9 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   protected final TreeMap<Long, OffsetBitSet> tree;
   protected final BitSetFactory factory;
-  private final int size;
 
   @Getter
   private final long uniqueId;
-
 
   public NaturalOrderedCollection() {
     this(0, new BitSetFactoryImpl(8192));
@@ -49,7 +54,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
   public NaturalOrderedCollection(long id, @NonNull BitSetFactory factory) {
     tree = new TreeMap<>(new OffsetBitSetComparator());
     this.factory = factory;
-    this.size = factory.getSize();
     uniqueId = id;
     List<OffsetBitSet> reloadList = factory.get(id);
     for (OffsetBitSet bitset : reloadList) {
@@ -74,8 +78,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
   }
 
   private OffsetBitSet locate(long value) {
-    long start = (value / size) * size;
-    return tree.get(start);
+    return tree.get(factory.getStartIndex(value));
   }
 
   @Override
@@ -129,6 +132,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <T> T[] toArray(T[] a) {
     Iterator<Long> itr = iterator();
     for (var x = 0; x < a.length && itr.hasNext(); x++) {
@@ -256,13 +260,10 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public boolean retainAll(@NonNull @NotNull Collection<?> c) {
-    var changed = false;
     if (isMatching(c)) {
-      changed = matchingRetainAll(c);
-    } else {
-      changed = nonMatchingRetainAll(c);
+      return matchingRetainAll(c);
     }
-    return changed;
+    return nonMatchingRetainAll(c);
   }
 
   private boolean nonMatchingRetainAll(Collection<?> c) {
@@ -276,7 +277,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
       }
     }
     validateTree();
-
     return changed;
   }
 
@@ -298,7 +298,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
       }
     }
     validateTree();
-
     return changed;
   }
 
@@ -324,14 +323,14 @@ public class NaturalOrderedCollection implements Collection<Long> {
   }
 
   public String toString() {
-    return "Tree:" + tree.toString() + " size = " + size();
+    return "Tree:" + tree + " size = " + size();
   }
 
   protected boolean isMatching(Collection<?> c) {
-    return (c instanceof NaturalOrderedCollection && ((NaturalOrderedCollection) c).factory.getSize() == factory.getSize());
+    return c instanceof NaturalOrderedCollection
+        && ((NaturalOrderedCollection) c).factory.getSize() == factory.getSize();
   }
 
-  // </editor-fold>
   static class OffsetBitSetComparator implements Comparator<Long> {
 
     @Override
@@ -346,7 +345,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
     }
   }
 
-  // <editor-fold desc="Standard Iterator">
   class LongIterator implements Iterator<Long> {
 
     ArrayList<Iterator<Long>> iterators;
@@ -370,10 +368,9 @@ public class NaturalOrderedCollection implements Collection<Long> {
       }
       if (active.hasNext()) {
         return true;
-      } else {
-        active = null;
-        return hasNext();
       }
+      active = null;
+      return hasNext();
     }
 
     @Override
