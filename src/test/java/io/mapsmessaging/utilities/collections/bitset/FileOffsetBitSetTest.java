@@ -43,10 +43,11 @@ public class FileOffsetBitSetTest {
 
     FileOffsetBitSet bitset = (FileOffsetBitSet) opened;
 
-    Assertions.assertEquals(0L, bitset.getPosition());
+    Assertions.assertEquals(16L, bitset.getPosition());
     Assertions.assertEquals(0L, bitset.getStart());
     Assertions.assertEquals(64L, bitset.getEnd());
     Assertions.assertEquals(1L, bitset.getBitSet().getUniqueId());
+    Assertions.assertTrue(bitset.isAllocated());
 
     factory.close();
   }
@@ -76,7 +77,7 @@ public class FileOffsetBitSetTest {
   }
 
   @Test
-  void fileFactoryReleaseResetsFileOffsetBitSetForFreeList() throws Exception {
+  void fileFactoryReleaseUsesExplicitFreeState() throws Exception {
     Path file = tempDir.resolve("bitsets.dat");
     FileBitSetFactoryImpl factory = new FileBitSetFactoryImpl(file.toString(), 64, 5);
 
@@ -88,14 +89,18 @@ public class FileOffsetBitSetTest {
 
     Assertions.assertEquals(0L, first.getStart());
     Assertions.assertEquals(64L, first.getEnd());
-    Assertions.assertEquals(-1L, first.getBitSet().getUniqueId());
+    Assertions.assertEquals(1L, first.getBitSet().getUniqueId());
+    Assertions.assertFalse(first.isAllocated());
     Assertions.assertTrue(first.isEmpty());
+    Assertions.assertEquals(1, factory.getFreeBitSets().size());
+    Assertions.assertSame(first, factory.getFreeBitSets().get(0));
+    Assertions.assertTrue(factory.get(-1L).isEmpty());
 
     FileOffsetBitSet second = (FileOffsetBitSet) factory.open(2L, 128L);
 
     Assertions.assertSame(first, second);
     Assertions.assertEquals(firstPosition, second.getPosition());
-
+    Assertions.assertTrue(second.isAllocated());
     Assertions.assertEquals(128L, second.getStart());
     Assertions.assertEquals(192L, second.getEnd());
     Assertions.assertEquals(2L, second.getBitSet().getUniqueId());
