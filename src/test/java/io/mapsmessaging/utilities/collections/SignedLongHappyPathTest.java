@@ -20,6 +20,7 @@
 
 package io.mapsmessaging.utilities.collections;
 
+import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.ByteBufferBitSetFactoryImpl;
 import org.junit.jupiter.api.Assertions;
@@ -110,5 +111,54 @@ class SignedLongHappyPathTest {
     Assertions.assertTrue(left.retainAll(List.of(-193L, -1L, 193L, 386L)));
     Assertions.assertEquals(List.of(-193L, -1L, 193L, 386L), new ArrayList<>(left));
     Assertions.assertEquals(4, left.size());
+  }
+
+  @Test
+  void signedWindowMathsContainsEveryProbeAcrossWindowSizeMatrix() {
+    int[] windowSizes = {1, 2, 63, 64, 65, 127, 128, 129, 192, 193, 1000, 8192};
+    long[] probes = {
+        Long.MIN_VALUE,
+        Long.MIN_VALUE + 1,
+        -8193L,
+        -8192L,
+        -1001L,
+        -1000L,
+        -194L,
+        -193L,
+        -192L,
+        -2L,
+        -1L,
+        0L,
+        1L,
+        2L,
+        192L,
+        193L,
+        194L,
+        999L,
+        1000L,
+        1001L,
+        8191L,
+        8192L,
+        8193L,
+        Long.MAX_VALUE - 1,
+        Long.MAX_VALUE
+    };
+
+    for (int windowSize : windowSizes) {
+      BitSetFactory factory = new BitSetFactoryImpl(windowSize);
+      Assertions.assertEquals(0L, factory.getStartIndex(0L));
+      Assertions.assertEquals(-((long) windowSize), factory.getStartIndex(-1L));
+
+      for (long value : probes) {
+        long start = factory.getStartIndex(value);
+        int length = factory.getWindowLength(start);
+        Assertions.assertTrue(length > 0 && length <= windowSize,
+            "Invalid logical length for window size " + windowSize + " at " + start);
+        Assertions.assertTrue(value >= start,
+            "Window starts after value for size " + windowSize + ": " + value + " -> " + start);
+        Assertions.assertTrue(value - start < length,
+            "Value outside logical window for size " + windowSize + ": " + value + " -> " + start + "/" + length);
+      }
+    }
   }
 }
