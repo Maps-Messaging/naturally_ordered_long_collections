@@ -42,6 +42,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
   private static final String OK = "ok";
   private static final String VALUE_PREFIX = "(value=";
   private static final String COLLECTION_SIZE_PREFIX = "(collectionSize=";
+  private static final String COLLECTION_ARGUMENT = "collection";
   private static final String LENGTH_PREFIX = "length=";
 
   private final AuditWriter auditWriter;
@@ -206,7 +207,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean containsAll(@NonNull Collection<?> collection) {
-    Objects.requireNonNull(collection, "collection");
+    Objects.requireNonNull(collection, COLLECTION_ARGUMENT);
     String args = COLLECTION_SIZE_PREFIX + collection.size() + ")";
     try {
       boolean result = super.containsAll(collection);
@@ -220,7 +221,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean addAll(@NonNull Collection<? extends Long> collection) {
-    Objects.requireNonNull(collection, "collection");
+    Objects.requireNonNull(collection, COLLECTION_ARGUMENT);
     String args = COLLECTION_SIZE_PREFIX + collection.size() + ")";
     try {
       boolean result = super.addAll(collection);
@@ -234,7 +235,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean removeAll(@NonNull Collection<?> collection) {
-    Objects.requireNonNull(collection, "collection");
+    Objects.requireNonNull(collection, COLLECTION_ARGUMENT);
     String args = COLLECTION_SIZE_PREFIX + collection.size() + ")";
     try {
       boolean result = super.removeAll(collection);
@@ -248,7 +249,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean retainAll(@NonNull Collection<?> collection) {
-    Objects.requireNonNull(collection, "collection");
+    Objects.requireNonNull(collection, COLLECTION_ARGUMENT);
     String args = COLLECTION_SIZE_PREFIX + collection.size() + ")";
     try {
       boolean result = super.retainAll(collection);
