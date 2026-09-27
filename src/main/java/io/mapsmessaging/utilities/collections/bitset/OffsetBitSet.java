@@ -24,7 +24,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
+  private static final System.Logger LOGGER = System.getLogger(OffsetBitSet.class.getName());
   private static final AtomicLong INSTANCE_ID_GENERATOR = new AtomicLong(0);
 
   private final long instanceId = INSTANCE_ID_GENERATOR.incrementAndGet();
@@ -70,14 +70,18 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
       }
     }
 
-    // If this isn't the first close, scream loudly with both stacks.
+    // If this isn't the first close, record both the attempted and original close stacks.
     if (existing != attempt) {
-      PrintStream err = System.err;
-      err.println(header("DOUBLE_CLOSE_ATTEMPT", attempt));
-      attempt.dumpTo(err);
-      err.println(header("ORIGINAL_CLOSE_WAS", existing));
-      existing.dumpTo(err);
-      err.flush();
+      LOGGER.log(
+          System.Logger.Level.WARNING,
+          header("DOUBLE_CLOSE_ATTEMPT", attempt),
+          attempt.stackTrace
+      );
+      LOGGER.log(
+          System.Logger.Level.WARNING,
+          header("ORIGINAL_CLOSE_WAS", existing),
+          existing.stackTrace
+      );
     }
 
     // Make the state clearly "dead".
@@ -226,27 +230,25 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
     ThreadState access = ThreadState.capture("access: " + operation);
     ThreadState closedBy = closeState.get();
 
-    PrintStream err = System.err;
-
-    err.println("=========================================================");
-    err.println(header("ACCESS_AFTER_CLOSE", access));
-    err.println("---------------------------------------------------------");
-    access.dumpTo(err);
+    LOGGER.log(
+        System.Logger.Level.WARNING,
+        header("ACCESS_AFTER_CLOSE", access),
+        access.stackTrace
+    );
 
     if (closedBy != null) {
       long delta = access.timeMillis - closedBy.timeMillis;
-      err.println("---------------------------------------------------------");
-      err.println("DeltaMillisSinceClose=" + delta);
-      err.println(header("CLOSED_BY", closedBy));
-      err.println("---------------------------------------------------------");
-      closedBy.dumpTo(err);
+      LOGGER.log(
+          System.Logger.Level.WARNING,
+          "DeltaMillisSinceClose=" + delta + " " + header("CLOSED_BY", closedBy),
+          closedBy.stackTrace
+      );
     } else {
-      err.println("---------------------------------------------------------");
-      err.println("CLOSED_BY=UNKNOWN (closeState not recorded)");
+      LOGGER.log(
+          System.Logger.Level.WARNING,
+          "CLOSED_BY=UNKNOWN (closeState not recorded)"
+      );
     }
-
-    err.println("=========================================================");
-    err.flush();
 
     throw new IllegalStateException("BitSet has been released. op=" + operation
         + " instanceId=" + instanceId
@@ -416,10 +418,5 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
       return new ThreadState(thread.getName(), thread.getId(), time, trace);
     }
 
-    void dumpTo(PrintStream err) {
-      err.println("Thread:" + threadName + " " + threadId);
-      err.println("TimeMillis:" + timeMillis);
-      stackTrace.printStackTrace(err);
-    }
   }
 }

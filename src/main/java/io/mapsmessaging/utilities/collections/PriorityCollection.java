@@ -63,8 +63,8 @@ public class PriorityCollection<T> implements Collection<T> {
   public void close() {
     for (Queue<T> queues : priorityStructure) {
       queues.clear();
-      if (queues instanceof NaturalOrderedCollection) {
-        ((NaturalOrderedCollection) queues).close();
+      if (queues instanceof NaturalOrderedCollection naturalOrderedCollection) {
+        naturalOrderedCollection.close();
       }
     }
     entryCount.set(0);

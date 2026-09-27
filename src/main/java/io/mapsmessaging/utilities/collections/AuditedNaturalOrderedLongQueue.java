@@ -38,6 +38,13 @@ import java.util.function.Predicate;
  */
 public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue implements Closeable {
 
+  private static final String EMPTY_ARGS = "()";
+  private static final String OK = "ok";
+  private static final String VALUE_PREFIX = "(value=";
+  private static final String COLLECTION_SIZE_PREFIX = "(collectionSize=";
+  private static final String COLLECTION_ARGUMENT = "collection";
+  private static final String LENGTH_PREFIX = "length=";
+
   private final AuditWriter auditWriter;
 
   public AuditedNaturalOrderedLongQueue() {
@@ -45,7 +52,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
     int hash = System.identityHashCode(this);
     File file = new File("AuditedNaturalOrderedLongQueue_"+hash+".dump");
     auditWriter = new AuditWriter(file.toPath());
-    auditWriter.writeEvent("constructor", "()", "ok", null);
+    auditWriter.writeEvent("constructor", EMPTY_ARGS, OK, null);
   }
 
   public AuditedNaturalOrderedLongQueue(long id, @NonNull @NotNull BitSetFactory factory) {
@@ -53,12 +60,12 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
     int hash = System.identityHashCode(this);
     File file = new File("AuditedNaturalOrderedLongQueue_"+hash+".dump");
     auditWriter = new AuditWriter(file.toPath());
-    auditWriter.writeEvent("constructor", "(id=" + id + ")", "ok", null);
+    auditWriter.writeEvent("constructor", "(id=" + id + ")", OK, null);
   }
 
   @Override
   public synchronized boolean offer(Long value) {
-    String args = "(value=" + value + ")";
+    String args = VALUE_PREFIX + value + ")";
     try {
       boolean result = super.offer(value);
       auditWriter.writeEvent("offer", args, String.valueOf(result), null);
@@ -71,7 +78,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized Long remove() {
-    String args = "()";
+    String args = EMPTY_ARGS;
     try {
       Long result = super.remove();
       auditWriter.writeEvent("remove", args, String.valueOf(result), null);
@@ -84,7 +91,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized Long poll() {
-    String args = "()";
+    String args = EMPTY_ARGS;
     try {
       Long result = super.poll();
       auditWriter.writeEvent("poll", args, String.valueOf(result), null);
@@ -97,7 +104,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized Long element() {
-    String args = "()";
+    String args = EMPTY_ARGS;
     try {
       Long result = super.element();
       auditWriter.writeEvent("element", args, String.valueOf(result), null);
@@ -110,7 +117,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized Long peek() {
-    String args = "()";
+    String args = EMPTY_ARGS;
     try {
       Long result = super.peek();
       auditWriter.writeEvent("peek", args, String.valueOf(result), null);
@@ -123,7 +130,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized int size() {
-    String args = "()";
+    String args = EMPTY_ARGS;
     try {
       int result = super.size();
       auditWriter.writeEvent("size", args, String.valueOf(result), null);
@@ -136,7 +143,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean isEmpty() {
-    String args = "()";
+    String args = EMPTY_ARGS;
     try {
       boolean result = super.isEmpty();
       auditWriter.writeEvent("isEmpty", args, String.valueOf(result), null);
@@ -149,10 +156,10 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized void clear() {
-    String args = "()";
+    String args = EMPTY_ARGS;
     try {
       super.clear();
-      auditWriter.writeEvent("clear", args, "ok", null);
+      auditWriter.writeEvent("clear", args, OK, null);
     } catch (RuntimeException exception) {
       auditWriter.writeEvent("clear", args, null, exception);
       throw exception;
@@ -161,7 +168,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean add(Long value) {
-    String args = "(value=" + value + ")";
+    String args = VALUE_PREFIX + value + ")";
     try {
       boolean result = super.add(value);
       auditWriter.writeEvent("add", args, String.valueOf(result), null);
@@ -174,7 +181,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean remove(Object value) {
-    String args = "(value=" + value + ")";
+    String args = VALUE_PREFIX + value + ")";
     try {
       boolean result = super.remove(value);
       auditWriter.writeEvent("remove(Object)", args, String.valueOf(result), null);
@@ -187,7 +194,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean contains(Object value) {
-    String args = "(value=" + value + ")";
+    String args = VALUE_PREFIX + value + ")";
     try {
       boolean result = super.contains(value);
       auditWriter.writeEvent("contains", args, String.valueOf(result), null);
@@ -200,8 +207,8 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean containsAll(@NonNull Collection<?> collection) {
-    Objects.requireNonNull(collection, "collection");
-    String args = "(collectionSize=" + collection.size() + ")";
+    Objects.requireNonNull(collection, COLLECTION_ARGUMENT);
+    String args = COLLECTION_SIZE_PREFIX + collection.size() + ")";
     try {
       boolean result = super.containsAll(collection);
       auditWriter.writeEvent("containsAll", args, String.valueOf(result), null);
@@ -214,8 +221,8 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean addAll(@NonNull Collection<? extends Long> collection) {
-    Objects.requireNonNull(collection, "collection");
-    String args = "(collectionSize=" + collection.size() + ")";
+    Objects.requireNonNull(collection, COLLECTION_ARGUMENT);
+    String args = COLLECTION_SIZE_PREFIX + collection.size() + ")";
     try {
       boolean result = super.addAll(collection);
       auditWriter.writeEvent("addAll", args, String.valueOf(result), null);
@@ -228,8 +235,8 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean removeAll(@NonNull Collection<?> collection) {
-    Objects.requireNonNull(collection, "collection");
-    String args = "(collectionSize=" + collection.size() + ")";
+    Objects.requireNonNull(collection, COLLECTION_ARGUMENT);
+    String args = COLLECTION_SIZE_PREFIX + collection.size() + ")";
     try {
       boolean result = super.removeAll(collection);
       auditWriter.writeEvent("removeAll", args, String.valueOf(result), null);
@@ -242,8 +249,8 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized boolean retainAll(@NonNull Collection<?> collection) {
-    Objects.requireNonNull(collection, "collection");
-    String args = "(collectionSize=" + collection.size() + ")";
+    Objects.requireNonNull(collection, COLLECTION_ARGUMENT);
+    String args = COLLECTION_SIZE_PREFIX + collection.size() + ")";
     try {
       boolean result = super.retainAll(collection);
       auditWriter.writeEvent("retainAll", args, String.valueOf(result), null);
@@ -270,10 +277,10 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized @NotNull Object[] toArray() {
-    String args = "()";
+    String args = EMPTY_ARGS;
     try {
       Object[] result = super.toArray();
-      auditWriter.writeEvent("toArray", args, "length=" + result.length, null);
+      auditWriter.writeEvent("toArray", args, LENGTH_PREFIX + result.length, null);
       return result;
     } catch (RuntimeException exception) {
       auditWriter.writeEvent("toArray", args, null, exception);
@@ -287,7 +294,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
     String args = "(arrayLength=" + array.length + ")";
     try {
       T[] result = super.toArray(array);
-      auditWriter.writeEvent("toArray(T[])", args, "length=" + result.length, null);
+      auditWriter.writeEvent("toArray(T[])", args, LENGTH_PREFIX + result.length, null);
       return result;
     } catch (RuntimeException exception) {
       auditWriter.writeEvent("toArray(T[])", args, null, exception);
@@ -301,7 +308,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
     String args = "(action=" + action.getClass().getName() + ")";
     try {
       super.forEach(action);
-      auditWriter.writeEvent("forEach", args, "ok", null);
+      auditWriter.writeEvent("forEach", args, OK, null);
     } catch (RuntimeException exception) {
       auditWriter.writeEvent("forEach", args, null, exception);
       throw exception;
@@ -310,10 +317,10 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized @NotNull Iterator<Long> iterator() {
-    String args = "()";
+    String args = EMPTY_ARGS;
     try {
       Iterator<Long> result = super.iterator();
-      auditWriter.writeEvent("iterator", args, "ok", null);
+      auditWriter.writeEvent("iterator", args, OK, null);
       return result;
     } catch (RuntimeException exception) {
       auditWriter.writeEvent("iterator", args, null, exception);
@@ -323,10 +330,10 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized void close() {
-    String args = "()";
+    String args = EMPTY_ARGS;
     try {
       super.close();
-      auditWriter.writeEvent("close", args, "ok", null);
+      auditWriter.writeEvent("close", args, OK, null);
     } catch (RuntimeException exception) {
       auditWriter.writeEvent("close", args, null, exception);
       throw exception;
@@ -337,7 +344,7 @@ public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue impl
 
   @Override
   public synchronized long getUniqueId() {
-    String args = "()";
+    String args = EMPTY_ARGS;
     try {
       long result = super.getUniqueId();
       auditWriter.writeEvent("getUniqueId", args, String.valueOf(result), null);

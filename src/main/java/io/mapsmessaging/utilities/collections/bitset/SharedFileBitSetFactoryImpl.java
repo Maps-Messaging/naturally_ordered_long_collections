@@ -63,7 +63,7 @@ public class SharedFileBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public List<OffsetBitSet> get(long uniqueId) {
-    if (uniqueId < 0) {
+    if (uniqueId == -1) {
       List<OffsetBitSet> bitSets = new ArrayList<>();
       for (var shard : shards) {
         bitSets.addAll(shard.get(-1));
