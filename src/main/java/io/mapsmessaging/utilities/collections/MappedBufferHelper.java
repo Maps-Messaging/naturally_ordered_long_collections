@@ -43,7 +43,7 @@ import java.nio.ByteBuffer;
  * @version 1.0
  * @since 1.0
  */
-public class MappedBufferHelper {
+public final class MappedBufferHelper {
 
   private MappedBufferHelper() {
     // Nothing to do here
