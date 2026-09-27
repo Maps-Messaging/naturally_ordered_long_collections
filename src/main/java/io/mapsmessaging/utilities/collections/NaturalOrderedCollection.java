@@ -223,30 +223,44 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   @Override
   public boolean removeAll(@NonNull @NotNull Collection<?> c) {
-    boolean changed = false;
-    if (isMatching(c)) {
-      NaturalOrderedCollection rhs = (NaturalOrderedCollection) c;
-      Collection<OffsetBitSet> bitsets = rhs.tree.values();
-      for (OffsetBitSet toRemove : bitsets) {
-        OffsetBitSet copy = tree.get(toRemove.getStart());
-        if (copy != null) {
-          int original = copy.cardinality();
-          copy.getBitSet().andNot(toRemove.getBitSet());
-          if (copy.isEmpty()) {
-            tree.remove(copy.getStart());
-            factory.release(copy);
-            changed = true;
-          } else {
-            changed = original != copy.cardinality() || changed;
-          }
-        }
-      }
-    } else {
-      for (Object value : c) {
-        changed = remove(value) || changed;
-      }
-    }
+    boolean changed = isMatching(c)
+        ? removeMatching((NaturalOrderedCollection) c)
+        : removeIndividually(c);
     validateTree();
+    return changed;
+  }
+
+  private boolean removeMatching(NaturalOrderedCollection rhs) {
+    boolean changed = false;
+    for (OffsetBitSet toRemove : rhs.tree.values()) {
+      changed = removeMatchingBitSet(toRemove) || changed;
+    }
+    return changed;
+  }
+
+  private boolean removeMatchingBitSet(OffsetBitSet toRemove) {
+    OffsetBitSet copy = tree.get(toRemove.getStart());
+    if (copy == null) {
+      return false;
+    }
+
+    int original = copy.cardinality();
+    copy.getBitSet().andNot(toRemove.getBitSet());
+
+    if (!copy.isEmpty()) {
+      return original != copy.cardinality();
+    }
+
+    tree.remove(copy.getStart());
+    factory.release(copy);
+    return true;
+  }
+
+  private boolean removeIndividually(Collection<?> collection) {
+    boolean changed = false;
+    for (Object value : collection) {
+      changed = remove(value) || changed;
+    }
     return changed;
   }
 
