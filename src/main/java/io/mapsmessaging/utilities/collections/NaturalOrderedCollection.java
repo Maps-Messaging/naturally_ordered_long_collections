@@ -351,7 +351,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
   }
 
   protected boolean isMatching(Collection<?> c) {
-    return (c instanceof NaturalOrderedCollection && ((NaturalOrderedCollection) c).factory.getSize() == factory.getSize());
+    return (c instanceof NaturalOrderedCollection coll && coll.factory.getSize() == factory.getSize());
   }
 
   // </editor-fold>
