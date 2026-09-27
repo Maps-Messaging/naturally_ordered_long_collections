@@ -38,8 +38,8 @@ import java.util.function.Predicate;
  */
 public class AuditedNaturalOrderedLongQueue extends NaturalOrderedLongQueue implements Closeable {
 
-  private static final String EMPTY_ARGS = EMPTY_ARGS;
-  private static final String OK = OK;
+  private static final String EMPTY_ARGS = "()";
+  private static final String OK = "ok";
   private static final String VALUE_PREFIX = "(value=";
   private static final String COLLECTION_SIZE_PREFIX = "(collectionSize=";
   private static final String LENGTH_PREFIX = "length=";
