@@ -32,6 +32,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 class SignedLongBadPathTest {
@@ -86,6 +87,7 @@ class SignedLongBadPathTest {
 
     Assertions.assertThrows(IOException.class,
         () -> new FileBitSetFactoryImpl(file.toString(), 193));
+    Files.delete(file);
   }
 
   @Test
@@ -99,5 +101,30 @@ class SignedLongBadPathTest {
 
     Assertions.assertThrows(IOException.class,
         () -> new FileBitSetFactoryImpl(file.toString(), 257));
+    Files.delete(file);
+  }
+
+  @Test
+  void invalidLaterRecordClosesEarlierMappedRecord() throws Exception {
+    Path file = tempDir.resolve("invalid-later-record.bit");
+    try (RandomAccessFile raf = new RandomAccessFile(file.toFile(), "rw")) {
+      raf.writeLong(FILE_MAGIC);
+      raf.writeInt(FILE_VERSION);
+      raf.writeInt(193);
+
+      raf.writeLong(1L);
+      raf.writeLong(41L);
+      raf.writeLong(0L);
+      raf.write(new byte[32]);
+
+      raf.writeLong(99L);
+      raf.writeLong(42L);
+      raf.writeLong(193L);
+      raf.write(new byte[32]);
+    }
+
+    Assertions.assertThrows(IOException.class,
+        () -> new FileBitSetFactoryImpl(file.toString(), 193));
+    Files.delete(file);
   }
 }

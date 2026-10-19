@@ -76,12 +76,35 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
 
     if (testFile.exists() && testFile.length() > 0) {
       raf = new RandomAccessFile(testFile, "rw");
-      loadFile();
-      if (used.isEmpty()) {
-        deleteFiles();
+      try {
+        loadFile();
+        if (used.isEmpty()) {
+          deleteFiles();
+        }
+      } catch (IOException | RuntimeException exception) {
+        cleanupFailedLoad(exception);
+        throw exception;
       }
     } else {
       deleted = true;
+    }
+  }
+
+  private void cleanupFailedLoad(Exception failure) {
+    try {
+      clearList(used);
+    } catch (RuntimeException cleanupFailure) {
+      failure.addSuppressed(cleanupFailure);
+    }
+    try {
+      clearList(free);
+    } catch (RuntimeException cleanupFailure) {
+      failure.addSuppressed(cleanupFailure);
+    }
+    try {
+      raf.close();
+    } catch (IOException cleanupFailure) {
+      failure.addSuppressed(cleanupFailure);
     }
   }
 
@@ -129,12 +152,12 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
       long state = raf.readLong();
       long uniqueId = raf.readLong();
       long offset = raf.readLong();
-      long bitmapPosition = pos + RECORD_HEADER_SIZE;
-      ByteBufferBackedBitMap bitmap = map(bitmapPosition, uniqueId);
       boolean allocated = state == STATE_ALLOCATED;
       if (!allocated && state != STATE_FREE) {
         throw new IOException("Invalid bitset record state " + state + " at position " + pos);
       }
+      long bitmapPosition = pos + RECORD_HEADER_SIZE;
+      ByteBufferBackedBitMap bitmap = map(bitmapPosition, uniqueId);
       FileOffsetBitSet bitset = new FileOffsetBitSet(
           bitmap, pos, offset, getWindowLength(offset), this, shard, allocated);
       if (allocated) {

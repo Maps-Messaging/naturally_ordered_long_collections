@@ -30,6 +30,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,6 +128,7 @@ class SignedLongMurphyPathTest {
 
     Assertions.assertThrows(IOException.class,
         () -> new FileBitSetFactoryImpl(file.toString(), WINDOW_SIZE));
+    Files.delete(file);
   }
 
   @Test
@@ -142,6 +144,7 @@ class SignedLongMurphyPathTest {
 
     Assertions.assertThrows(IOException.class,
         () -> new FileBitSetFactoryImpl(file.toString(), WINDOW_SIZE));
+    Files.delete(file);
   }
 
   @Test
