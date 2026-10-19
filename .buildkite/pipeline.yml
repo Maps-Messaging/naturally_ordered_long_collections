@@ -2,9 +2,8 @@ steps:
   - label: ":maven: Build and Deploy"
     command:
       - export SONAR_TOKEN=$(buildkite-agent secret get SONAR_TOKEN)
-      - export NVD_API_KEY=$(buildkite-agent secret get nvd_api_key)
-      - mvn -Dgpg.skip=true clean deploy
-      - mvn sonar:sonar -Dsonar.token=$${SONAR_TOKEN}
+      - mvn clean deploy
+      - mvn sonar:sonar -Dsonar.token=$${SONAR_TOKEN} -Dsonar.branch.name=development
     plugins:
       - test-collector#v1.0.0:
           files: "target/surefire-reports/*.xml"
