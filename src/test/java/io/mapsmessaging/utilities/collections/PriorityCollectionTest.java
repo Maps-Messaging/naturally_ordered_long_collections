@@ -48,6 +48,72 @@ public class PriorityCollectionTest {
     Assertions.assertDoesNotThrow(()->new PriorityCollection<Long>(queues, new PriorityFactoryTest<>()));
   }
 
+
+  @Test
+  void addExistingValueAtSamePriorityDoesNotIncreaseSize() {
+    PriorityCollection<Long> collection = new PriorityCollection<>(16, null);
+
+    Assertions.assertTrue(collection.add(1L, 4));
+    Assertions.assertFalse(collection.add(1L, 4));
+
+    Assertions.assertEquals(1, collection.size());
+    Assertions.assertTrue(collection.contains(1L));
+  }
+
+  @Test
+  void addExistingValueAtDifferentPriorityMovesValue() {
+    PriorityCollection<Long> collection = new PriorityCollection<>(16, null);
+
+    Assertions.assertTrue(collection.add(1L, 4));
+    Assertions.assertTrue(collection.add(1L, 8));
+
+    Assertions.assertEquals(1, collection.size());
+    Assertions.assertEquals(8, collection.removeAndGetPriority(1L));
+    Assertions.assertTrue(collection.isEmpty());
+  }
+
+  @Test
+  void addAllDoesNotDuplicateExistingValues() {
+    PriorityCollection<Long> collection = new PriorityCollection<>(16, null);
+
+    collection.add(1L, 4);
+
+    Assertions.assertTrue(collection.addAll(Arrays.asList(1L, 2L), 4));
+
+    Assertions.assertEquals(2, collection.size());
+    Assertions.assertTrue(collection.contains(1L));
+    Assertions.assertTrue(collection.contains(2L));
+  }
+
+  @Test
+  void addAllMovesExistingValuesToNewPriority() {
+    PriorityCollection<Long> collection = new PriorityCollection<>(16, null);
+
+    collection.add(1L, 4);
+    collection.add(2L, 4);
+
+    Assertions.assertTrue(collection.addAll(Arrays.asList(1L, 2L), 8));
+
+    Assertions.assertEquals(2, collection.size());
+    Assertions.assertEquals(8, collection.removeAndGetPriority(1L));
+    Assertions.assertEquals(8, collection.removeAndGetPriority(2L));
+    Assertions.assertTrue(collection.isEmpty());
+  }
+
+  @Test
+  void addAllReturnsFalseWhenAllValuesAlreadyExistAtSamePriority() {
+    PriorityCollection<Long> collection = new PriorityCollection<>(16, null);
+
+    collection.add(1L, 4);
+    collection.add(2L, 4);
+
+    Assertions.assertFalse(collection.addAll(Arrays.asList(1L, 2L), 4));
+
+    Assertions.assertEquals(2, collection.size());
+    Assertions.assertEquals(4, collection.removeAndGetPriority(1L));
+    Assertions.assertEquals(4, collection.removeAndGetPriority(2L));
+    Assertions.assertTrue(collection.isEmpty());
+  }
   @Test
   void addAllToCollection(){
     PriorityCollection<Long> collection = new PriorityCollection<Long>(16, new PriorityFactoryTest<>());

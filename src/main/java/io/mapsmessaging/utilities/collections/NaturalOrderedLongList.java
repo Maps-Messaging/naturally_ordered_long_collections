@@ -109,12 +109,20 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
       for (OffsetBitSet bitMap : tree.values()) {
         iterators.add(bitMap.listIterator());
       }
-      active = iterators.get(0);
-      iteratorIndex = 0;
+      if (iterators.isEmpty()) {
+        active = null;
+        iteratorIndex = -1;
+      } else {
+        active = iterators.get(0);
+        iteratorIndex = 0;
+      }
     }
 
     @Override
     public boolean hasNext() {
+      if (active == null) {
+        return false;
+      }
       if (active.hasNext()) {
         return true;
       } else {
@@ -141,6 +149,9 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
       if (active == null) {
         if (iteratorIndex >= iterators.size()) {
           iteratorIndex = iterators.size() - 1;
+        }
+        if (iteratorIndex < 0) {
+          return false;
         }
         active = iterators.get(iteratorIndex);
       }

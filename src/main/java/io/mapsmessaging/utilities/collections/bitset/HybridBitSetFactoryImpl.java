@@ -43,7 +43,8 @@ public class HybridBitSetFactoryImpl extends BitSetFactory {
   }
 
   @Override
-  public void close() throws IOException {
+  public synchronized void close() throws IOException {
+    activeDelegates.clear();
     memoryFactory.close();
     fileFactory.close();
   }
@@ -89,7 +90,7 @@ public class HybridBitSetFactoryImpl extends BitSetFactory {
 
     DelegatingOffsetBitSet wrapper;
     if (delegates.size() >= threshold) {
-      return new DelegatingOffsetBitSet(fileFactory.open(uniqueId, id), fileFactory, uniqueId);
+      wrapper = new DelegatingOffsetBitSet(fileFactory.open(uniqueId, id), fileFactory, uniqueId);
     } else {
       wrapper = new DelegatingOffsetBitSet(memoryFactory.open(uniqueId, id), memoryFactory, uniqueId);
     }

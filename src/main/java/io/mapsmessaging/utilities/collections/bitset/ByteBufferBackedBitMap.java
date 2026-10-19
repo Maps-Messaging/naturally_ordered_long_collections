@@ -176,8 +176,13 @@ public class ByteBufferBackedBitMap implements BitSet {
     if (fromIndex == toIndex) {
       return;
     }
-    int fromOffset = checkBoundary(fromIndex);
-    int toOffset = checkBoundary(toIndex);
+    if (fromIndex > toIndex) {
+      throw new IndexOutOfBoundsException(
+          "fromIndex " + fromIndex + " is greater than toIndex " + toIndex);
+    }
+
+    int fromOffset = checkRangeBoundary(fromIndex);
+    int toOffset = checkRangeBoundary(toIndex);
 
     int startWordIndex = getLongPosition(fromOffset);
     int endWordIndex = getLongPosition(toOffset - 1);
@@ -186,31 +191,37 @@ public class ByteBufferBackedBitMap implements BitSet {
     int endBit = (toOffset - 1) % LONG_BITS;
 
     long firstWordMask = LONG_MASK << startBit;
-    long lastWordMask = LONG_MASK >>> (63 - endBit); // avoid negative shift
+    long lastWordMask = LONG_MASK >>> (LONG_BITS - 1 - endBit);
 
     if (startWordIndex == endWordIndex) {
-      // Case 1: One word
-      var map = backing.getLong(startWordIndex);
-      map ^= (firstWordMask & lastWordMask);
+      long map = backing.getLong(startWordIndex);
+      map ^= firstWordMask & lastWordMask;
       backing.putLong(startWordIndex, map);
-    } else {
-      // Case 2: Multiple words
-      // Handle first word
-      var map = backing.getLong(startWordIndex);
-      map ^= (firstWordMask & lastWordMask);
-      backing.putLong(startWordIndex, map);
-
-      // Handle intermediate words, if any
-      for (int i = startWordIndex + 1; i < endWordIndex; i++) {
-        map = backing.getLong(i);
-        map ^= LONG_MASK;
-        backing.putLong(i, map);
-      }
-      map = backing.getLong(endWordIndex);
-      map ^= (lastWordMask);
-      backing.putLong(endWordIndex, map);
+      return;
     }
+
+    long map = backing.getLong(startWordIndex);
+    map ^= firstWordMask;
+    backing.putLong(startWordIndex, map);
+
+    for (int position = startWordIndex + LONG_SIZE; position < endWordIndex; position += LONG_SIZE) {
+      map = backing.getLong(position);
+      map ^= LONG_MASK;
+      backing.putLong(position, map);
+    }
+
+    map = backing.getLong(endWordIndex);
+    map ^= lastWordMask;
+    backing.putLong(endWordIndex, map);
   }
+
+  private int checkRangeBoundary(int bit) {
+    if (bit < 0 || bit > capacity) {
+      throw new IndexOutOfBoundsException("Expecting range from 0 to " + capacity + " received " + bit);
+    }
+    return bit;
+  }
+
   // </editor-fold>
 
   // <editor-fold desc="Statistic functions">
@@ -342,27 +353,31 @@ public class ByteBufferBackedBitMap implements BitSet {
         return base;
       }
       position -= LONG_SIZE;
-      if (position == -1) {
+      if (position < 0) {
         return -1;
       }
       word = backing.getLong(position);
     }
   }
 
-  @Override
   public int previousClearBit(int fromIndex) {
+    if (fromIndex < 0 || fromIndex >= capacity) {
+      return -1;
+    }
+
     var internalBit = checkBoundary(fromIndex);
     int position = getLongPosition(internalBit);
-    long word = ~backing.getLong(position) & (LONG_MASK >>> -(fromIndex + 1));
+    int bitPos = (fromIndex + 1) % LONG_BITS;
+    long word = ~backing.getLong(position) & (LONG_MASK >>> (LONG_BITS - bitPos));
 
     while (true) {
       if (word != 0) {
-        int base = ((position - longStartIdx) << 3) + 64;
+        int base = ((position - longStartIdx) << 3) + LONG_BITS;
         base = base - 1 - Long.numberOfLeadingZeros(word);
         return base;
       }
       position -= LONG_SIZE;
-      if (position == -1) {
+      if (position < 0) {
         return -1;
       }
       word = ~backing.getLong(position);

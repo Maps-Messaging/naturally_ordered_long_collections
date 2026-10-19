@@ -31,7 +31,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Iterator;
 import java.util.ListIterator;
 
-@SuppressWarnings("squid:S7027") // ByteBufferBackedBitMap is used here but only to access internal functions for speed
 @ToString
 public class BitSetImpl implements BitSet {
 
@@ -52,40 +51,45 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public boolean set(int bit) {
-    boolean previous = bitSet.get(checkBoundary(bit));
-    bitSet.set(checkBoundary(bit));
+    int index = checkBitBoundary(bit);
+    boolean previous = bitSet.get(index);
+    bitSet.set(index);
     return !previous;
   }
 
   @Override
   public boolean clear(int bit) {
-    boolean previous = bitSet.get(checkBoundary(bit));
-    bitSet.clear(checkBoundary(bit));
+    int index = checkBitBoundary(bit);
+    boolean previous = bitSet.get(index);
+    bitSet.clear(index);
     return previous;
   }
 
   @Override
   public boolean isSet(int bit) {
-    return bitSet.get(checkBoundary(bit));
+    return bitSet.get(checkBitBoundary(bit));
   }
 
   @Override
   public boolean isSetAndClear(int bit) {
-    boolean response = isSet(bit);
+    int index = checkBitBoundary(bit);
+    boolean response = bitSet.get(index);
     if (response) {
-      clear(bit);
+      bitSet.clear(index);
     }
     return response;
   }
 
   @Override
   public void flip(int bit) {
-    bitSet.flip(checkBoundary(bit));
+    bitSet.flip(checkBitBoundary(bit));
   }
 
   @Override
   public void flip(int fromIndex, int toIndex) {
-    bitSet.flip(checkBoundary(fromIndex), checkBoundary(toIndex));
+    int from = checkRangeBoundary(fromIndex);
+    int to = checkRangeBoundary(toIndex);
+    bitSet.flip(from, to);
   }
 
   @Override
@@ -139,8 +143,8 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public void and(@NonNull @NotNull BitSet map) {
-    if (map instanceof BitSetImpl bitSet1) {
-      bitSet.and(bitSet1.bitSet);
+    if (map instanceof BitSetImpl bitSetImpl) {
+      bitSet.and(bitSetImpl.bitSet);
     } else if (map instanceof ByteBufferBackedBitMap byteBufferBackedBitMap) {
       bitwiseCompute(byteBufferBackedBitMap, new And());
     }
@@ -148,8 +152,8 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public void xor(@NonNull @NotNull BitSet map) {
-    if (map instanceof BitSetImpl bitSet1) {
-      bitSet.xor(bitSet1.bitSet);
+    if (map instanceof BitSetImpl bitSetImpl) {
+      bitSet.xor(bitSetImpl.bitSet);
     } else if (map instanceof ByteBufferBackedBitMap byteBufferBackedBitMap) {
       bitwiseCompute(byteBufferBackedBitMap, new Xor());
     }
@@ -157,8 +161,8 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public void or(@NonNull @NotNull BitSet map) {
-    if (map instanceof BitSetImpl bitSet1) {
-      bitSet.or(bitSet1.bitSet);
+    if (map instanceof BitSetImpl bitSetImpl) {
+      bitSet.or(bitSetImpl.bitSet);
     } else if (map instanceof ByteBufferBackedBitMap byteBufferBackedBitMap) {
       bitwiseCompute(byteBufferBackedBitMap, new Or());
     }
@@ -166,8 +170,8 @@ public class BitSetImpl implements BitSet {
 
   @Override
   public void andNot(@NonNull @NotNull BitSet map) {
-    if (map instanceof BitSetImpl bitSet1) {
-      bitSet.andNot(bitSet1.bitSet);
+    if (map instanceof BitSetImpl bitSetImpl) {
+      bitSet.andNot(bitSetImpl.bitSet);
     } else if (map instanceof ByteBufferBackedBitMap byteBufferBackedBitMap) {
       bitwiseCompute(byteBufferBackedBitMap, new AndNot());
     }
@@ -177,13 +181,13 @@ public class BitSetImpl implements BitSet {
     long[] longs = bitSet.toLongArray();
     int longCount = map.getLongCount();
     if (longs.length < longCount) {
-      var expand = new long[longCount];
-      System.arraycopy(longs, 0, expand, 0, longs.length);
-      longs = expand;
+      var expanded = new long[longCount];
+      System.arraycopy(longs, 0, expanded, 0, longs.length);
+      longs = expanded;
     }
 
-    int len = Math.min(map.getLongCount(), longs.length);
-    for (var x = 0; x < len; x++) {
+    int length = Math.min(map.getLongCount(), longs.length);
+    for (var x = 0; x < length; x++) {
       var lhs = longs[x];
       var rhs = map.getLong(x);
       longs[x] = operator.operation(lhs, rhs);
@@ -194,17 +198,6 @@ public class BitSetImpl implements BitSet {
   @Override
   public Iterator<Integer> iterator() {
     return new BitSetIterator(this);
-  }
-
-  private int checkBoundary(int bit) {
-    //
-    // Must be within range
-    //
-    if (bit < 0 || bit > capacity) {
-      throw new IndexOutOfBoundsException(
-          "Expecting range from 0 to " + (capacity) + " received " + bit);
-    }
-    return bit;
   }
 
   @Override
@@ -222,4 +215,19 @@ public class BitSetImpl implements BitSet {
     this.uniqueId = uniqueId;
   }
 
+  private int checkBitBoundary(int bit) {
+    if (bit < 0 || bit >= capacity) {
+      throw new IndexOutOfBoundsException(
+          "Expecting range from 0 to " + (capacity - 1) + " received " + bit);
+    }
+    return bit;
+  }
+
+  private int checkRangeBoundary(int bit) {
+    if (bit < 0 || bit > capacity) {
+      throw new IndexOutOfBoundsException(
+          "Expecting range from 0 to " + capacity + " received " + bit);
+    }
+    return bit;
+  }
 }

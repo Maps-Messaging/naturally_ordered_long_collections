@@ -135,8 +135,8 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   }
 
   private synchronized void deleteFiles() throws IOException {
-    if(!used.isEmpty()){
-      return; // We have used bitmaps
+    if(deleted || !used.isEmpty()){
+      return; // Already deleted, or active bitmaps are still in use
     }
     if (raf != null && raf.getChannel().isOpen()) {
       clearList(used);

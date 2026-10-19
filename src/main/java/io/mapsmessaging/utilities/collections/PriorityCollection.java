@@ -46,7 +46,7 @@ public class PriorityCollection<T> implements Collection<T> {
     for (var x = 0; x < priorityBound; x++) {
       priorityStructure.add(new LinkedList<>());
     }
-    entryCount = new AtomicLong(0);
+    entryCount = new AtomicLong(calculateSize());
   }
 
   public PriorityCollection(Queue<T>[] priorityQueues, @Nullable PriorityFactory<T> factory) {
@@ -57,14 +57,14 @@ public class PriorityCollection<T> implements Collection<T> {
     prioritySize = priorityQueues.length;
     priorityFactory = factory;
     priorityStructure.addAll(Arrays.asList(priorityQueues).subList(0, prioritySize));
-    entryCount = new AtomicLong(0);
+    entryCount = new AtomicLong(calculateSize());
   }
 
   public void close() {
     for (Queue<T> queues : priorityStructure) {
       queues.clear();
-      if (queues instanceof NaturalOrderedCollection) {
-        ((NaturalOrderedCollection) queues).close();
+      if (queues instanceof NaturalOrderedCollection naturalOrderedCollection) {
+        naturalOrderedCollection.close();
       }
     }
     entryCount.set(0);
@@ -120,13 +120,17 @@ public class PriorityCollection<T> implements Collection<T> {
     return response.toArray();
   }
 
-  public int size() {
+  private int calculateSize() {
     var size = 0;
-    for (Queue<T> ts : priorityStructure) {
-      if (!ts.isEmpty()) {
-        size += ts.size();
-      }
+    for (Queue<T> queue : priorityStructure) {
+      size += queue.size();
     }
+    return size;
+  }
+
+  @Override
+  public int size() {
+    int size = calculateSize();
     entryCount.set(size);
     return size;
   }
@@ -202,14 +206,12 @@ public class PriorityCollection<T> implements Collection<T> {
   }
 
   public boolean addAll(Collection<? extends T> c, int priority) {
+    boolean changed = false;
     for (T entry : c) {
-      if (!add(entry, priority)) {
-        entryCount.set(size());
-        return false;
-      }
+      changed = add(entry, priority) || changed;
     }
     entryCount.set(size());
-    return true;
+    return changed;
   }
 
   @Override
@@ -276,14 +278,46 @@ public class PriorityCollection<T> implements Collection<T> {
   }
 
   boolean push(T entry, int priority) {
+    if (entry == null) {
+      throw new IllegalArgumentException("NULL not accepted");
+    }
     if (priority < 0 || priority >= prioritySize) {
       throw new IllegalArgumentException("Supplied priority outside of defined bounds");
     }
-    boolean ret = priorityStructure.get(priority).add(entry);
-    if (ret) {
+
+    int existingPriority = findPriority(entry);
+    if (existingPriority == priority) {
+      return false;
+    }
+
+    if (existingPriority != -1) {
+      priorityStructure.get(existingPriority).remove(entry);
+      priorityStructure.get(priority).add(entry);
+      return true;
+    }
+
+    boolean added = priorityStructure.get(priority).add(entry);
+    if (added) {
       entryCount.incrementAndGet();
     }
-    return ret;
+    return added;
+  }
+
+  private int findPriority(T entry) {
+    if (priorityFactory != null) {
+      int priority = priorityFactory.getPriority(entry);
+      if (priorityStructure.get(priority).contains(entry)) {
+        return priority;
+      }
+      return -1;
+    }
+
+    for (int priority = 0; priority < priorityStructure.size(); priority++) {
+      if (priorityStructure.get(priority).contains(entry)) {
+        return priority;
+      }
+    }
+    return -1;
   }
 
   protected void recalculateSize() {

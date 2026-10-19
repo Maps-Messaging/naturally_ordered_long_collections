@@ -114,35 +114,49 @@ abstract class PriorityBitSetQueueTest  {
   void testRandomEntries() {
     PriorityQueue<Long> priorityQueue = createQueue(16);
     List<ArrayList<Long>> comparison = new ArrayList<>();
+    Map<Long, Integer> valuePriorities = new HashMap<>();
     for (int x = 0; x < 16; x++) {
       comparison.add(new ArrayList<>());
     }
+
     Random rdm = new Random();
     long endTime = System.currentTimeMillis() + RUN_TIME;
-    int count = 0;
+    int attempts = 0;
 
-    while (endTime > System.currentTimeMillis() && count < 1000000) {
+    while (endTime > System.currentTimeMillis() && attempts < 1000000) {
       long value = Math.abs(rdm.nextLong() % 100000000L);
       int priority = Math.abs(rdm.nextInt(16));
-      ArrayList<Long> pq = comparison.get(priority);
-      if (!pq.contains(value)) {
-        priorityQueue.add(value, priority);
-        pq.add(value);
-        count++;
+      Integer existingPriority = valuePriorities.get(value);
+      boolean expectedChanged = existingPriority == null || existingPriority != priority;
+
+      Assertions.assertEquals(expectedChanged, priorityQueue.add(value, priority));
+
+      if (expectedChanged) {
+        if (existingPriority != null) {
+          comparison.get(existingPriority).remove(value);
+        }
+        comparison.get(priority).add(value);
+        valuePriorities.put(value, priority);
       }
+
+      attempts++;
     }
+
     System.err.println("Added " + priorityQueue.size() + " in " + (RUN_TIME / 1000) + "seconds");
+
     for (int x = 0; x < 16; x++) {
       comparison.get(x).sort(Long::compare);
-      Assertions.assertEquals(priorityQueue.priorityStructure.get(x).size(), comparison.get(x).size());
+      Assertions.assertEquals(comparison.get(x).size(), priorityQueue.priorityStructure.get(x).size());
     }
 
     long testSize = 0;
     for (int x = 15; x >= 0; x--) {
       testSize += comparison.get(x).size();
     }
-    Assertions.assertEquals(priorityQueue.size(), count);
-    Assertions.assertEquals(testSize, count);
+
+    Assertions.assertEquals(valuePriorities.size(), priorityQueue.size());
+    Assertions.assertEquals(testSize, priorityQueue.size());
+
     Iterator<Long> priorityIterator = priorityQueue.iterator();
     Iterator<Long> stagedIterator = comparison.remove(comparison.size() - 1).iterator();
     while (priorityIterator.hasNext()) {
@@ -154,7 +168,7 @@ abstract class PriorityBitSetQueueTest  {
       }
       long test1 = priorityIterator.next();
       long test2 = stagedIterator.next();
-      Assertions.assertEquals(test1, test2);
+      Assertions.assertEquals(test2, test1);
     }
   }
 
