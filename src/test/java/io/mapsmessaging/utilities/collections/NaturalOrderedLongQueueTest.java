@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 class NaturalOrderedLongQueueTest {
 
@@ -526,11 +527,38 @@ class NaturalOrderedLongQueueTest {
   }
 
   @Test
-  void elementOnEmptyReturnsNullByCurrentContract() {
+  void elementOnEmptyThrowsNoSuchElementException() {
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(64);
-    NaturalOrderedLongQueue noll = build(0, factory);
+    NaturalOrderedLongQueue queue = build(0, factory);
 
-    Assertions.assertNull(noll.element());
+    Assertions.assertThrows(NoSuchElementException.class, queue::element);
+    Assertions.assertNull(queue.peek());
+    Assertions.assertNull(queue.poll());
+  }
+
+  @Test
+  void elementReturnsLowestSignedValueWithoutRemovingItAndThrowsWhenDrained() {
+    ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(64);
+    NaturalOrderedLongQueue queue = build(0, factory);
+
+    queue.offer(128L);
+    queue.offer(-1L);
+    queue.offer(0L);
+
+    Assertions.assertEquals(-1L, queue.element());
+    Assertions.assertEquals(-1L, queue.element());
+    Assertions.assertEquals(3, queue.size());
+
+    Assertions.assertEquals(-1L, queue.remove());
+    Assertions.assertEquals(0L, queue.element());
+    Assertions.assertEquals(0L, queue.poll());
+    Assertions.assertEquals(128L, queue.element());
+    Assertions.assertEquals(128L, queue.poll());
+
+    Assertions.assertTrue(queue.isEmpty());
+    Assertions.assertThrows(NoSuchElementException.class, queue::element);
+    Assertions.assertNull(queue.peek());
+    Assertions.assertNull(queue.poll());
   }
 
   @Test
