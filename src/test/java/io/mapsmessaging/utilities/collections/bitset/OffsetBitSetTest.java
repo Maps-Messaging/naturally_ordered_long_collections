@@ -136,7 +136,7 @@ public abstract class OffsetBitSetTest {
       Assertions.assertTrue(bitmap.isSet(x));
     }
     for (int x = 0; x < bitCount; x++) {
-      Assertions.assertNotEquals(-1, bitmap.nextSetBitAndClear(0));
+      Assertions.assertNotNull(bitmap.nextSetBitAndClear(0));
     }
     for (int x = 0; x < bitCount; x++) {
       Assertions.assertFalse(bitmap.isSet(x));
@@ -213,17 +213,17 @@ public abstract class OffsetBitSetTest {
     Assertions.assertEquals(4, bitmap.cardinality());
     bitmap.set(128);
     Assertions.assertEquals(5, bitmap.cardinality());
-    Assertions.assertEquals(0, bitmap.nextSetBit(0));
+    Assertions.assertEquals(0L, bitmap.nextSetBit(0));
     bitmap.clear(0);
-    Assertions.assertEquals(63, bitmap.nextSetBit(0));
+    Assertions.assertEquals(63L, bitmap.nextSetBit(0));
     bitmap.clear(63);
-    Assertions.assertEquals(64, bitmap.nextSetBit(0));
+    Assertions.assertEquals(64L, bitmap.nextSetBit(0));
     bitmap.clear(64);
-    Assertions.assertEquals(127, bitmap.nextSetBit(0));
+    Assertions.assertEquals(127L, bitmap.nextSetBit(0));
     bitmap.clear(127);
-    Assertions.assertEquals(128, bitmap.nextSetBit(0));
+    Assertions.assertEquals(128L, bitmap.nextSetBit(0));
     bitmap.clear(128);
-    Assertions.assertEquals(-1, bitmap.nextSetBit(0));
+    Assertions.assertNull(bitmap.nextSetBit(0));
   }
 
   @Test
@@ -234,7 +234,7 @@ public abstract class OffsetBitSetTest {
       bitmap.set(x);
     }
     bitmap.clear(128);
-    Assertions.assertEquals(128, bitmap.nextClearBit(0));
+    Assertions.assertEquals(128L, bitmap.nextClearBit(0));
   }
 
   @Test
@@ -243,7 +243,7 @@ public abstract class OffsetBitSetTest {
     bitmap.set(128);
     Assertions.assertEquals(1, bitmap.cardinality());
     int bitCount = bitmap.length() - 1;
-    Assertions.assertEquals(128, bitmap.previousSetBit(bitCount));
+    Assertions.assertEquals(128L, bitmap.previousSetBit(bitCount));
   }
 
   @Test
@@ -257,7 +257,7 @@ public abstract class OffsetBitSetTest {
     bitmap.clear(128);
     Assertions.assertEquals(bitmap.length() - 1, bitmap.cardinality());
     bitCount = bitmap.length() - 1;
-    Assertions.assertEquals(128, bitmap.previousClearBit(bitCount));
+    Assertions.assertEquals(128L, bitmap.previousClearBit(bitCount));
   }
 
   @Test
@@ -573,7 +573,7 @@ public abstract class OffsetBitSetTest {
     Assertions.assertEquals(offset + 1, bitmap.nextSetBit(offset));
     Assertions.assertEquals(offset + 1, bitmap.nextSetBit(offset + 1));
     Assertions.assertEquals(offset + 63, bitmap.nextSetBit(offset + 2));
-    Assertions.assertEquals(-1, bitmap.nextSetBit(offset + 64));
+    Assertions.assertNull(bitmap.nextSetBit(offset + 64));
   }
 
   @Test
@@ -588,15 +588,15 @@ public abstract class OffsetBitSetTest {
     Assertions.assertFalse(bitmap.isSet(offset + 1));
     Assertions.assertEquals(offset + 63, bitmap.nextSetBitAndClear(offset));
     Assertions.assertFalse(bitmap.isSet(offset + 63));
-    Assertions.assertEquals(-1, bitmap.nextSetBitAndClear(offset));
+    Assertions.assertNull(bitmap.nextSetBitAndClear(offset));
   }
 
   @Test
-  public void previousSetBitReturnsMinusOneWhenNoSetBitExists() {
+  public void previousSetBitReturnsNullWhenNoSetBitExists() {
     long offset = 64;
     OffsetBitSet bitmap = createOffsetBitset(offset);
 
-    Assertions.assertEquals(-1, bitmap.previousSetBit(offset));
+    Assertions.assertNull(bitmap.previousSetBit(offset));
   }
 
   @Test
@@ -613,7 +613,7 @@ public abstract class OffsetBitSetTest {
   }
 
   @Test
-  public void previousClearBitReturnsMinusOneWhenNoClearBitExists() {
+  public void previousClearBitReturnsNullWhenNoClearBitExists() {
     long offset = 64;
     OffsetBitSet bitmap = createOffsetBitset(offset);
 
@@ -621,7 +621,7 @@ public abstract class OffsetBitSetTest {
       bitmap.set(value);
     }
 
-    Assertions.assertEquals(-1, bitmap.previousClearBit(offset));
+    Assertions.assertNull(bitmap.previousClearBit(offset));
   }
 
   @Test

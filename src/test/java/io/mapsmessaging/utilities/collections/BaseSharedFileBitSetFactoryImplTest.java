@@ -44,7 +44,6 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
   @Test
   void testShardAllocationAndPersistence() throws Exception {
     try {
-      // Phase 1: Allocate and persist data
       try (SharedFileBitSetFactoryImpl factory = buildFactory()) {
         NaturalOrderedLongQueue[] queues = new NaturalOrderedLongQueue[SESSION_COUNT];
         for (int i = 0; i < SESSION_COUNT; i++) {
@@ -56,7 +55,6 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
         }
       }
 
-      // Phase 2: Reload and validate
       try (SharedFileBitSetFactoryImpl factory = buildFactory()) {
         for (int i = 0; i < SESSION_COUNT; i++) {
           NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue(i, factory);
@@ -72,7 +70,6 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
       }
     } finally {
       closeFiles();
-
     }
   }
 
@@ -85,22 +82,20 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
         6635L, 5333L, 1711L, 8527L, 9785L
     );
     try {
-      // Phase 1: Save data
       try (SharedFileBitSetFactoryImpl factory = buildFactory()) {
         for (long id : sessionIds) {
-          NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue((int)id, factory);
+          NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue((int) id, factory);
           queue.offer(id * 10L);
           queue.offer(id * 10L + 1);
         }
       }
 
-      // Phase 2: Reload and discover IDs
       try (SharedFileBitSetFactoryImpl factory = buildFactory()) {
         List<Long> discoveredIds = factory.getUniqueIds().stream().sorted().collect(Collectors.toList());
         List<Long> expectedIds = sessionIds.stream().sorted().collect(Collectors.toList());
         Assertions.assertEquals(expectedIds, discoveredIds);
         for (long id : discoveredIds) {
-          NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue((int)id, factory);
+          NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue((int) id, factory);
           Assertions.assertEquals(id * 10L, queue.poll());
           Assertions.assertEquals(id * 10L + 1, queue.poll());
           Assertions.assertTrue(queue.isEmpty());
@@ -113,12 +108,9 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
     }
   }
 
-
-
   @Test
   void testShardReloadAndIntegrity() throws Exception {
     try {
-      // Phase 1: Write data
       try (SharedFileBitSetFactoryImpl factory = buildFactory()) {
         for (int i = 0; i < SESSION_COUNT; i++) {
           NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue(i, factory);
@@ -128,7 +120,6 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
         }
       }
 
-      // Phase 2: Reload and verify
       try (SharedFileBitSetFactoryImpl factory = buildFactory()) {
         for (int i = 0; i < SESSION_COUNT; i++) {
           NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue(i, factory);
@@ -144,7 +135,6 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
       }
     } finally {
       closeFiles();
-
     }
   }
 
@@ -157,11 +147,11 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
         queues[i].offer((long) i);
       }
 
-      int initialFree = factory.get(-1).size();
+      int initialFree = factory.getFreeBitSets().size();
       for (int i = 0; i < SESSION_COUNT; i += 2) {
         queues[i].clear();
       }
-      int increasedFree = factory.get(-1).size();
+      int increasedFree = factory.getFreeBitSets().size();
       Assertions.assertTrue(increasedFree > initialFree);
 
       NaturalOrderedLongQueue reused = new NaturalOrderedLongQueue(0, factory);
@@ -177,7 +167,7 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
     for (int i = 0; i < SHARD_COUNT; i++) {
       boolean deleted = false;
       int count = 0;
-      while(!deleted) {
+      while (!deleted) {
         try {
           System.gc();
           Thread.sleep(100);
@@ -185,12 +175,11 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
           Files.deleteIfExists(Paths.get(BASE_FILENAME + "_" + i));
           deleted = true;
         } catch (Exception e) {
-          if(count > 4){
+          if (count > 4) {
             throw e;
           }
           System.gc();
           Thread.sleep(100);
-
         }
       }
     }
@@ -199,7 +188,6 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
   @Test
   void testGetAllEventIdsWithInterest() throws IOException {
     try {
-      // Insert events across sessions
       try (SharedFileBitSetFactoryImpl factory = buildFactory()) {
         NaturalOrderedLongQueue[] queues = new NaturalOrderedLongQueue[SESSION_COUNT];
         for (int i = 0; i < SESSION_COUNT; i++) {
@@ -212,12 +200,9 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
         }
       }
 
-      // Reload and validate getAllEventIdsWithInterest
-      try (SharedFileBitSetFactoryImpl factory =buildFactory()) {
+      try (SharedFileBitSetFactoryImpl factory = buildFactory()) {
         List<Long> allEvents = factory.getAllEventIdsWithInterest();
         Assertions.assertEquals(TOTAL_EVENTS, allEvents.size());
-
-        // Optional: Check all expected IDs exist
         for (long id = 0; id < TOTAL_EVENTS; id++) {
           Assertions.assertTrue(allEvents.contains(id));
         }
@@ -228,6 +213,7 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
       }
     }
   }
+
   @Test
   void testEmptyFactoryReturnsNoEvents() throws IOException, InterruptedException {
     try (SharedFileBitSetFactoryImpl factory = buildFactory()) {
@@ -236,5 +222,4 @@ abstract class BaseSharedFileBitSetFactoryImplTest {
       closeFiles();
     }
   }
-
 }

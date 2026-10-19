@@ -35,8 +35,10 @@ public class ByteBufferBitSetFactoryImpl extends BitSetFactory {
 
   @Override
   public OffsetBitSet open(long uniqueId, long id) {
-    BitSet bs = new ByteBufferBackedBitMap(ByteBuffer.allocateDirect(windowSize / 8), 0, uniqueId);
-    return new OffsetBitSet(bs, getStartIndex(id));
+    int byteSize = ((windowSize + 63) / 64) * Long.BYTES;
+    BitSet bitSet = new ByteBufferBackedBitMap(ByteBuffer.allocateDirect(byteSize), 0, uniqueId);
+    long start = getStartIndex(id);
+    return new OffsetBitSet(bitSet, start, getWindowLength(start));
   }
 
   @Override

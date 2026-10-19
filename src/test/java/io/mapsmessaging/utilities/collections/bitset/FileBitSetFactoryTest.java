@@ -26,9 +26,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.util.List;
 
-class FileBitSetFactoryTest extends BitSetFactoryTest{
-
-
+class FileBitSetFactoryTest extends BitSetFactoryTest {
 
   @Override
   BitSetFactory createFactory(int size) throws IOException {
@@ -39,19 +37,18 @@ class FileBitSetFactoryTest extends BitSetFactoryTest{
   @Override
   @Test
   void checkListReturns() throws IOException {
-    try( BitSetFactory bitSetFactory = createFactory(1024)) {
+    try (BitSetFactory bitSetFactory = createFactory(1024)) {
       long id = System.currentTimeMillis();
       OffsetBitSet bitSet = bitSetFactory.open(id, 1);
       bitSetFactory.release(bitSet);
       Assertions.assertTrue(bitSetFactory.getUniqueIds().isEmpty());
-      Assertions.assertFalse(bitSetFactory.get(-1).isEmpty());
-      Assertions.assertEquals(1, bitSetFactory.get(-1).size());
+      Assertions.assertEquals(1, bitSetFactory.getFreeBitSets().size());
     }
   }
 
   @Test
   void checkReload() throws IOException {
-    try( BitSetFactory bitSetFactory = createFactory(1024)) {
+    try (BitSetFactory bitSetFactory = createFactory(1024)) {
       long id = System.currentTimeMillis();
       OffsetBitSet bitSet = bitSetFactory.open(id, 1);
       for (int x = 0; x < 1024; x++) {
@@ -60,13 +57,13 @@ class FileBitSetFactoryTest extends BitSetFactoryTest{
       factory.close();
     }
 
-    try( BitSetFactory bitSetFactory = createFactory(1024)) {
+    try (BitSetFactory bitSetFactory = createFactory(1024)) {
       Assertions.assertFalse(bitSetFactory.getUniqueIds().isEmpty());
-      for(long id:bitSetFactory.getUniqueIds()){
+      for (long id : bitSetFactory.getUniqueIds()) {
         List<OffsetBitSet> bitSets = bitSetFactory.get(id);
         Assertions.assertFalse(bitSets.isEmpty());
-        for(OffsetBitSet bitSet:bitSets){
-          for(int x=0;x<1024;x++){
+        for (OffsetBitSet bitSet : bitSets) {
+          for (int x = 0; x < 1024; x++) {
             Assertions.assertTrue(bitSet.isSet(x));
             bitSet.clear(x);
             Assertions.assertFalse(bitSet.isSet(x));
@@ -75,9 +72,8 @@ class FileBitSetFactoryTest extends BitSetFactoryTest{
         }
       }
     }
-    try( BitSetFactory bitSetFactory = createFactory(1024)) {
+    try (BitSetFactory bitSetFactory = createFactory(1024)) {
       Assertions.assertTrue(bitSetFactory.getUniqueIds().isEmpty());
     }
   }
-
 }

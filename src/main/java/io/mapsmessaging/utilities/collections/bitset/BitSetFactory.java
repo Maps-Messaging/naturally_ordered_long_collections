@@ -29,6 +29,9 @@ public abstract class BitSetFactory implements Closeable {
   protected final int windowSize;
 
   protected BitSetFactory(int size) {
+    if (size <= 0) {
+      throw new IllegalArgumentException("Window size must be greater than 0");
+    }
     windowSize = size;
   }
 
@@ -45,7 +48,31 @@ public abstract class BitSetFactory implements Closeable {
   }
 
   public long getStartIndex(long id) {
-    return (id / windowSize) * windowSize;
+    long remainder = Math.floorMod(id, (long) windowSize);
+    if (remainder == 0) {
+      return id;
+    }
+    if (id < Long.MIN_VALUE + remainder) {
+      return Long.MIN_VALUE;
+    }
+    return id - remainder;
+  }
+
+  public int getWindowLength(long start) {
+    if (start == Long.MIN_VALUE) {
+      long remainder = Math.floorMod(Long.MIN_VALUE, (long) windowSize);
+      if (remainder != 0) {
+        return (int) (windowSize - remainder);
+      }
+    }
+    if (start > Long.MAX_VALUE - (windowSize - 1L)) {
+      return (int) (Long.MAX_VALUE - start + 1L);
+    }
+    return windowSize;
+  }
+
+  public List<OffsetBitSet> getFreeBitSets() {
+    return List.of();
   }
 
   public abstract void close(OffsetBitSet bitset);

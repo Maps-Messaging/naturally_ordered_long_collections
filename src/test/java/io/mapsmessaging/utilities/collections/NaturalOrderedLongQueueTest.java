@@ -342,6 +342,7 @@ class NaturalOrderedLongQueueTest {
     Assertions.assertEquals(65536L, noll.poll());
     Assertions.assertTrue(noll.isEmpty());
   }
+
   @Test
   void removeAllPlainCollectionReturnsFalseWhenUnchanged() {
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(64);
@@ -1247,7 +1248,6 @@ class NaturalOrderedLongQueueTest {
     FileBitSetFactoryImpl factory = new FileBitSetFactoryImpl(filename, windowSize);
 
     try {
-      // Phase 1: Allocate queues and distribute events
       NaturalOrderedLongQueue[] queues = new NaturalOrderedLongQueue[sessionCount];
 
       for (int i = 0; i < sessionCount; i++) {
@@ -1261,7 +1261,6 @@ class NaturalOrderedLongQueueTest {
 
       factory.close();
 
-      // Phase 2: Reload and verify persistence
       factory = new FileBitSetFactoryImpl(filename, windowSize);
       queues = new NaturalOrderedLongQueue[sessionCount];
       for (int i = 0; i < sessionCount; i++) {
@@ -1280,18 +1279,18 @@ class NaturalOrderedLongQueueTest {
         Assertions.assertTrue(count > 0);
       }
 
-      // Phase 3: Release a few queues, verify increase in free list
-      int initialFreeSize = factory.get(-1).size();
+      for (int i = 0; i < sessionCount; i += 2) {
+        queues[i].offer(100000L + i);
+      }
+      int initialFreeSize = factory.getFreeBitSets().size();
 
-      // Release half the queues
       for (int i = 0; i < sessionCount; i += 2) {
         queues[i].clear();
       }
 
-      int increasedFreeSize = factory.get(-1).size();
+      int increasedFreeSize = factory.getFreeBitSets().size();
       Assertions.assertTrue(increasedFreeSize > initialFreeSize);
 
-      // Phase 4: Reuse a closed session ID and verify it is empty
       NaturalOrderedLongQueue reusedQueue = build(0, factory);
       Assertions.assertTrue(reusedQueue.isEmpty());
       reusedQueue.offer(99999L);

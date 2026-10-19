@@ -46,7 +46,8 @@ class FileBitSetFactoryImplTest {
 
     Assertions.assertTrue(factory.get(1L).isEmpty());
     Assertions.assertTrue(factory.getUniqueIds().isEmpty());
-    Assertions.assertTrue(factory.get(-1L).size() >= 1);
+    Assertions.assertEquals(1, factory.getFreeBitSets().size());
+    Assertions.assertTrue(factory.get(-1L).isEmpty());
 
     factory.close();
   }
