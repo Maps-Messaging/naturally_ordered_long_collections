@@ -140,6 +140,6 @@ class ConcurrentNaturalOrderedLongQueueTest {
 
   @Test
   void testElementThrowsException() {
-    assertNull(queue.element());
+    assertThrows(NoSuchElementException.class, queue::element);
   }
 }
