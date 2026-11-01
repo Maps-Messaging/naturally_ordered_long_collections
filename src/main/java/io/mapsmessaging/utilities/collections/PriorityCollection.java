@@ -242,6 +242,11 @@ public class PriorityCollection<T> implements Collection<T> {
 
   @Override
   public boolean removeAll(Collection<?> c) {
+    if (c == this) {
+      boolean changed = !isEmpty();
+      clear();
+      return changed;
+    }
     boolean changed = false;
     for (Object value : c) {
       changed = remove(value) || changed;
