@@ -127,7 +127,7 @@ No claim of runtime compatibility, readiness for release, or CoAP root cause is 
 
 `NaturalOrderedCollection.removeMatching()`, `removeMatchingBitSet()`, `matchingRetainAll()`, and `LongIterator.remove()` plus `NaturalOrderedLongList.LongListIterator.remove()` were updated. No external invalidation recovery, iterator snapshots, new dependency, persistent file format, or full-tree validation was introduced.
 
-`MSG423RemovalLifecycleTest` adds 11 new regression scenarios: self bulk removal and retain, matching peer removal/retain, empty-cache no-change semantics, plain retain and `removeIf`, iterator removal across window boundaries, list iterator removal, file-backed shared-factory close/reopen with negative persistent IDs, a 1,000,001-event bulk removal, and a seeded 2,000-step `TreeSet<Long>` model for heap and direct-backed queues. These are **test definitions**, not yet verified executed results.
+`MSG423RemovalLifecycleTest` adds 12 new regression scenarios: self bulk removal and retain, matching peer removal/retain, empty-cache no-change semantics, plain retain and `removeIf`, iterator removal across window boundaries, list iterator removal, file-backed shared-factory close/reopen with negative persistent IDs, a 1,000,001-event bulk removal, a file-backed iterator/removeIf/retainAll reopen test, and a seeded 2,000-step `TreeSet<Long>` model for heap and direct-backed queues. These are **test definitions**, not yet verified executed results.
 
 ### Out-of-scope consumer issue requiring explicit decision
 
