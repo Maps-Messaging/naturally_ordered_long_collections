@@ -41,35 +41,35 @@ class PriorityCorruptionTest {
     long baseUniqueId = 1L;
     try (SharedFileBitSetFactoryImpl sharedFileBitSetFactory =
         new SharedFileBitSetFactoryImpl(tempDir.resolve("testCorruption.bin").toString(), 4, 4096)) {
-    PriorityQueue<Long> queue1 = createQueue(sharedFileBitSetFactory, baseUniqueId);
-    for(long x = 0; x < 10; x++){
-      queue1.add(x, 1);
-    }
-    PriorityQueue<Long> queue2 = createQueue(sharedFileBitSetFactory, baseUniqueId);
+        PriorityQueue<Long> queue1 = createQueue(sharedFileBitSetFactory, baseUniqueId);
+        for(long x = 0; x < 10; x++){
+          queue1.add(x, 1);
+        }
+        PriorityQueue<Long> queue2 = createQueue(sharedFileBitSetFactory, baseUniqueId);
 
 
-    Queue<Long> queue3 = new LinkedList<>();
-    queue1.flatten(queue3);
-    long val = 0;
-    for(Long x:queue3){
-      Assertions.assertEquals(val, x);
-      val++;
-    }
+        Queue<Long> queue3 = new LinkedList<>();
+        queue1.flatten(queue3);
+        long val = 0;
+        for(Long x:queue3){
+          Assertions.assertEquals(val, x);
+          val++;
+        }
 
-    queue3 = new LinkedList<>();
-    queue2.flatten(queue3);
-    val = 0;
-    for(Long x:queue3){
-      Assertions.assertEquals(val, x);
-      val++;
-    }
+        queue3 = new LinkedList<>();
+        queue2.flatten(queue3);
+        val = 0;
+        for(Long x:queue3){
+          Assertions.assertEquals(val, x);
+          val++;
+        }
 
-    while(!queue1.isEmpty()){
-      queue1.poll();
-    }
-    queue1.clear();
-    Thread.sleep(11_000L);
-    queue2.clear();
+        while(!queue1.isEmpty()){
+          queue1.poll();
+        }
+        queue1.clear();
+        Thread.sleep(11_000L);
+        queue2.clear();
     }
   }
 
