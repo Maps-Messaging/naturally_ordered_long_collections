@@ -16,13 +16,18 @@ package io.mapsmessaging.utilities.collections;
 
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.BitSetImpl;
+import io.mapsmessaging.utilities.collections.bitset.FileBitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.OffsetBitSet;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class MSG423CollectionContractTest {
 
@@ -149,6 +154,45 @@ class MSG423CollectionContractTest {
           return super.isActive();
         }
       };
+    }
+  }
+
+  private static final class TrackingFileFactory extends FileBitSetFactoryImpl {
+    private int openings;
+    private int releases;
+
+    TrackingFileFactory(String filename) throws IOException {
+      super(filename, 4096);
+    }
+
+    @Override
+    public synchronized OffsetBitSet open(long uniqueId, long id) throws IOException {
+      OffsetBitSet bitset = super.open(uniqueId, id);
+      openings++;
+      return bitset;
+    }
+
+    @Override
+    public synchronized void release(OffsetBitSet bitset) {
+      super.release(bitset);
+      releases++;
+    }
+  }
+
+  @Test
+  void fileBackedMonotonicAddRemoveReusesSinglePhysicalRecord(@TempDir Path tempDir) throws IOException {
+    Path file = tempDir.resolve("boundary-cache.bin");
+    try (TrackingFileFactory factory = new TrackingFileFactory(file.toString())) {
+      NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue(-1L, factory);
+      for (long id = 0; id <= 8192L; id++) {
+        Assertions.assertTrue(queue.offer(id));
+        Assertions.assertTrue(queue.remove(id));
+      }
+
+      Assertions.assertEquals(3, factory.openings);
+      Assertions.assertEquals(2, factory.releases);
+      Assertions.assertEquals(1, factory.get(-1L).size(), "The last empty window remains allocated");
+      Assertions.assertEquals(16L + 24L + 512L, Files.size(file), "Reused windows must not append new file records");
     }
   }
 
