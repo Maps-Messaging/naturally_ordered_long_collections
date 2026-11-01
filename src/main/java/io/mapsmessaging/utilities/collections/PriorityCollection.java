@@ -329,12 +329,18 @@ public class PriorityCollection<T> implements Collection<T> {
   private class PriorityCollectionIterator implements Iterator<T> {
 
     private final List<Iterator<T>> iterators;
+    private final List<Queue<T>> sources;
     private Iterator<T> active;
+    private Queue<T> activeSource;
+    private T lastReturned;
 
     public PriorityCollectionIterator() {
       iterators = new ArrayList<>();
+      sources = new ArrayList<>();
       for (int x = prioritySize - 1; x >= 0; x--) {
-        iterators.add(priorityStructure.get(x).iterator());
+        Queue<T> queue = priorityStructure.get(x);
+        sources.add(queue);
+        iterators.add(queue.iterator());
       }
       active = null;
     }
@@ -349,6 +355,7 @@ public class PriorityCollection<T> implements Collection<T> {
         // Top iterator is empty, remove it and check the next one
         //
         iterators.remove(0);
+        sources.remove(0);
         return hasNext();
       }
       return false;
@@ -359,9 +366,12 @@ public class PriorityCollection<T> implements Collection<T> {
       if (!iterators.isEmpty()) {
         if (iterators.get(0).hasNext()) {
           active = iterators.get(0);
-          return active.next();
+          activeSource = sources.get(0);
+          lastReturned = active.next();
+          return lastReturned;
         } else {
           iterators.remove(0);
+          sources.remove(0);
           return next();
         }
       }
@@ -373,9 +383,19 @@ public class PriorityCollection<T> implements Collection<T> {
       if (active == null) {
         throw new IllegalStateException("next() has not been called or entry already removed");
       }
-      active.remove();
-      entryCount.decrementAndGet();
+      if (activeSource instanceof NaturalOrderedCollection) {
+        synchronized (activeSource) {
+          if (activeSource.remove(lastReturned)) {
+            entryCount.decrementAndGet();
+          }
+        }
+      } else {
+        active.remove();
+        entryCount.decrementAndGet();
+      }
       active = null;
+      activeSource = null;
+      lastReturned = null;
     }
   }
 }
