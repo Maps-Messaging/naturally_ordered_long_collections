@@ -21,18 +21,20 @@
 package io.mapsmessaging.utilities.collections;
 
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
+import io.mapsmessaging.utilities.collections.bitset.OffsetBitSet;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.NavigableMap;
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
 
-  private volatile long modificationCount;
+  private long closeEpoch;
 
   public ConcurrentNaturalOrderedLongQueue() {
     super();
@@ -54,11 +56,7 @@ public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
 
   @Override
   public synchronized Long poll() {
-    Long result = super.poll();
-    if (result != null) {
-      modificationCount++;
-    }
-    return result;
+    return super.poll();
   }
 
   @Override
@@ -83,30 +81,18 @@ public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
 
   @Override
   public synchronized void clear() {
-    boolean hadWindows = !tree.isEmpty();
     super.clear();
-    if (hadWindows) {
-      modificationCount++;
-    }
   }
 
   // From NaturalOrderedCollection
   @Override
   public synchronized boolean add(Long aLong) {
-    boolean changed = super.add(aLong);
-    if (changed) {
-      modificationCount++;
-    }
-    return changed;
+    return super.add(aLong);
   }
 
   @Override
   public synchronized boolean remove(Object o) {
-    boolean changed = super.remove(o);
-    if (changed) {
-      modificationCount++;
-    }
-    return changed;
+    return super.remove(o);
   }
 
   @Override
@@ -121,38 +107,22 @@ public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
 
   @Override
   public synchronized boolean addAll(@NonNull Collection<? extends Long> c) {
-    boolean changed = super.addAll(c);
-    if (changed) {
-      modificationCount++;
-    }
-    return changed;
+    return super.addAll(c);
   }
 
   @Override
   public synchronized boolean removeAll(@NonNull Collection<?> c) {
-    boolean changed = super.removeAll(c);
-    if (changed) {
-      modificationCount++;
-    }
-    return changed;
+    return super.removeAll(c);
   }
 
   @Override
   public synchronized boolean retainAll(@NonNull Collection<?> c) {
-    boolean changed = super.retainAll(c);
-    if (changed) {
-      modificationCount++;
-    }
-    return changed;
+    return super.retainAll(c);
   }
 
   @Override
   public synchronized boolean removeIf(Predicate<? super Long> filter) {
-    boolean changed = super.removeIf(filter);
-    if (changed) {
-      modificationCount++;
-    }
-    return changed;
+    return super.removeIf(filter);
   }
 
   @Override
@@ -170,46 +140,74 @@ public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
     super.forEach(action);
   }
 
+  private Long nextAfter(Long cursor) {
+    if (cursor != null && cursor == Long.MAX_VALUE) {
+      return null;
+    }
+    NavigableMap<Long, OffsetBitSet> windows = cursor == null ? tree : tree.tailMap(factory.getStartIndex(cursor), true);
+    for (OffsetBitSet window : windows.values()) {
+      long first = cursor != null && window.getStart() <= cursor ? cursor + 1L : window.getStart();
+      Long candidate = window.nextSetBit(first);
+      if (candidate != null) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
   @Override
   public synchronized @NotNull Iterator<Long> iterator() {
-    Iterator<Long> delegate = super.iterator();
     return new Iterator<>() {
-      private long expectedCount = modificationCount;
+      private final long expectedCloseEpoch = closeEpoch;
+      private Long cursor;
+      private boolean canRemove;
 
-      private void checkForModification() {
-        if (expectedCount != modificationCount) {
-          throw new ConcurrentModificationException();
+      private void checkNotClosed() {
+        if (expectedCloseEpoch != closeEpoch) {
+          throw new IllegalStateException("Queue was closed during iteration");
         }
       }
 
       @Override
       public boolean hasNext() {
-        checkForModification();
-        return delegate.hasNext();
+        synchronized (ConcurrentNaturalOrderedLongQueue.this) {
+          checkNotClosed();
+          return nextAfter(cursor) != null;
+        }
       }
 
       @Override
       public Long next() {
-        checkForModification();
-        return delegate.next();
+        synchronized (ConcurrentNaturalOrderedLongQueue.this) {
+          checkNotClosed();
+          Long value = nextAfter(cursor);
+          if (value == null) {
+            throw new NoSuchElementException();
+          }
+          cursor = value;
+          canRemove = true;
+          return value;
+        }
       }
 
       @Override
       public void remove() {
-        checkForModification();
-        delegate.remove();
-        expectedCount = modificationCount;
+        synchronized (ConcurrentNaturalOrderedLongQueue.this) {
+          checkNotClosed();
+          if (!canRemove) {
+            throw new IllegalStateException("next() has not been called or element already removed");
+          }
+          ConcurrentNaturalOrderedLongQueue.this.remove(cursor);
+          canRemove = false;
+        }
       }
     };
   }
 
   @Override
   public synchronized void close() {
-    boolean hadWindows = !tree.isEmpty();
+    closeEpoch++;
     super.close();
-    if (hadWindows) {
-      modificationCount++;
-    }
   }
 
   // Optional: expose unique ID if needed
