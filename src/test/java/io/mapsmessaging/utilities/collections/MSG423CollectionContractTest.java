@@ -132,6 +132,46 @@ class MSG423CollectionContractTest {
     Assertions.assertTrue(queue.isEmpty());
   }
 
+  private static final class ActiveScanFactory extends BitSetFactoryImpl {
+    private int activeChecks;
+
+    ActiveScanFactory() {
+      super(64);
+    }
+
+    @Override
+    public OffsetBitSet open(long uniqueId, long id) {
+      long start = getStartIndex(id);
+      return new OffsetBitSet(new BitSetImpl(getSize()), start, getWindowLength(start)) {
+        @Override
+        public boolean isActive() {
+          activeChecks++;
+          return super.isActive();
+        }
+      };
+    }
+  }
+
+  @Test
+  void regularRemovalsDoNotScanEveryWindowForInactiveBitsets() {
+    ActiveScanFactory factory = new ActiveScanFactory();
+    NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue(1L, factory);
+    for (long id = 0; id < 384L; id++) {
+      queue.offer(id);
+    }
+
+    Assertions.assertTrue(queue.remove(65L));
+    Assertions.assertFalse(queue.remove(65L));
+    Assertions.assertFalse(queue.remove(-1L));
+    Assertions.assertFalse(queue.remove("invalid ID"));
+    Assertions.assertTrue(queue.removeAll(List.of(1L, 129L)));
+    Assertions.assertTrue(queue.removeIf(value -> value == 193L));
+    Assertions.assertEquals(0, factory.activeChecks, "Regular mutations must not scan every window");
+
+    queue.clear();
+    Assertions.assertTrue(factory.activeChecks > 0, "Explicit clear still checks for invalidated windows");
+  }
+
   @Test
   void typedArraysRespectCollectionContract() {
     NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue();
