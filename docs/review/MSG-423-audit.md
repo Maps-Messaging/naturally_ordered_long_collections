@@ -105,3 +105,37 @@ The user reported a local `mvn clean test` result of **506 tests, 0 failures, 0 
 - [ ] Perform a final line-by-line source and test audit and a changed-line scope check before declaring MSG-423 complete.
 
 No claim of runtime compatibility, readiness for release, or CoAP root cause is made by this document.
+
+## Follow-up: server/storage removal lifecycle review (2026-11-01)
+
+**Baseline:** Current `fix/MSG-423-signed-long-audit` branch. This entry records the source-level correction and regression coverage; it does not assert a passing post-change Maven/JDK 25 run.
+
+### Observed real consumers
+
+- MapsMessaging server `BaseMessageStateManager`: subscription queues use 11 priority levels; `register`, `allocate`, `commit`, `expired`, rollback, and `getAll` exercise queue add/remove/peek and copying. Subscription cleanup `DestinationSubscriptionManager.scanForInterest()` uses `removedQueue.removeAll(interested)` to remove matching windows.
+- Server `DestinationStateManagerFactory`: non-persistent subscription state uses `BitSetFactoryImpl(4096)`; persistent state uses `ConcurrentSharedFileBitSetFactoryImpl(..., 4, 4096)`.
+- `Maps-Messaging/dynamic_storage`: `MemoryStorage` and `PartitionStorage` construct natural-ordered lists/queues for key enumeration, expiry and eviction; `MemoryTierStorage` uses a natural-ordered queue to track tier migration.
+
+### Approved behaviour
+
+1. Individual and bulk removals must leave *at most one* empty bitset in the collection; when the last window is emptied, retain it for reuse. Explicit `clear()` and `close()` retain their original full-release semantics.
+2. Every window actually released by a collection must be removed from that collection's tree in the same path. No periodic or per-event `validateTree()` scan is permitted to compensate.
+3. `removeAll(this)` must not mutate its tree through a separate iterator; `retainAll(this)` must be a no-op. Report `Collection` changed-state booleans based on removed values, not internal cache cleanup.
+4. Iterator removal targets the last value returned by `next()`/`previous()` even if `hasNext()` moves the active window. The returned value, including `-1L`, is data rather than a sentinel.
+
+### Corrected paths and tests
+
+`NaturalOrderedCollection.removeMatching()`, `removeMatchingBitSet()`, `matchingRetainAll()`, and `LongIterator.remove()` plus `NaturalOrderedLongList.LongListIterator.remove()` were updated. No external invalidation recovery, iterator snapshots, new dependency, persistent file format, or full-tree validation was introduced.
+
+`MSG423RemovalLifecycleTest` adds 11 new regression scenarios: self bulk removal and retain, matching peer removal/retain, empty-cache no-change semantics, plain retain and `removeIf`, iterator removal across window boundaries, list iterator removal, file-backed shared-factory close/reopen with negative persistent IDs, a 1,000,001-event bulk removal, and a seeded 2,000-step `TreeSet<Long>` model for heap and direct-backed queues. These are **test definitions**, not yet verified executed results.
+
+### Out-of-scope consumer issue requiring explicit decision
+
+In `Maps-Messaging/dynamic_storage/src/main/java/io/mapsmessaging/storage/impl/tier/memory/MemoryTierStorage.java` the tier-eviction loop accepts a polled key only when `key != null && key != -1`. The collections library supports `-1L` as a legitimate event/key ID; this consumer will skip migrating that key when its queue returns `-1L`. This does not authorize a cross-repository change. Discuss separately; do not silently alter or create a new issue.
+
+### Verification gates before merge/release
+
+- [ ] Local clean JDK 25 `mvn clean test` and `mvn clean verify`, with Surefire totals, skips, and coverage examined after the new commit(s).
+- [ ] Validate concurrent shared-file tests and the newly added persistent reopen test on the same filesystem/JDK family used for server production.
+- [ ] Run server subscription interest cleanup, retained/in-flight rollback, and storage expiry/tiering integration with a library artifact built from this exact branch.
+- [ ] Separate out-of-scope data correctness issues from MSG-423 and obtain a disposition.
