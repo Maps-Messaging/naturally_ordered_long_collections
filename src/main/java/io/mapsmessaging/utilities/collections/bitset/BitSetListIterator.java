@@ -100,5 +100,7 @@ class BitSetListIterator implements ListIterator<Integer> {
   @Override
   public void add(Integer integer) {
     active.set(integer);
+    current = integer + 1;
+    selected = -1;
   }
 }

@@ -200,7 +200,24 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
 
     @Override
     public void add(Long aLong) {
+      boolean atEnd = active == null && (iteratorIndex >= iterators.size() || iterators.isEmpty());
+      OffsetBitSet lastWindow = atEnd && !tree.isEmpty() ? tree.lastEntry().getValue() : null;
       NaturalOrderedLongList.this.add(aLong);
+
+      if (atEnd) {
+        OffsetBitSet insertedWindow = tree.get(factory.getStartIndex(aLong));
+        if (insertedWindow == lastWindow && !iterators.isEmpty()) {
+          active = iterators.get(iterators.size() - 1);
+        } else if (insertedWindow != null &&
+            (lastWindow == null || insertedWindow.getStart() > lastWindow.getStart())) {
+          active = insertedWindow.listIterator();
+          iterators.add(active);
+        }
+        if (active != null) {
+          iteratorIndex = iterators.size() - 1;
+          active.add(aLong);
+        }
+      }
     }
 
     @Override
