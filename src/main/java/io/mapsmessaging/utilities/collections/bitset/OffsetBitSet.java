@@ -385,10 +385,13 @@ public class OffsetBitSet implements Comparable<OffsetBitSet> {
 
   @Override
   public boolean equals(Object obj) {
-    if (obj instanceof OffsetBitSet offsetBitSet) {
-      return compareTo(offsetBitSet) == 0;
+    if (this == obj) {
+      return true;
     }
-    return false;
+    if (obj == null || getClass() != obj.getClass()) {
+      return false;
+    }
+    return start == ((OffsetBitSet) obj).start;
   }
 
   @Override
