@@ -595,7 +595,7 @@ class NaturalOrderedLongQueueTest {
   }
 
   @Test
-  void typedToArrayWithLargerArrayLeavesTrailingEntriesUnchanged() {
+  void typedToArrayWithLargerArrayClearsFirstUnusedEntry() {
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(64);
     NaturalOrderedLongQueue noll = build(0, factory);
 
@@ -606,7 +606,7 @@ class NaturalOrderedLongQueueTest {
     Long[] response = noll.toArray(values);
 
     Assertions.assertSame(values, response);
-    Assertions.assertArrayEquals(new Long[] {1L, 64L, 99L, 100L}, response);
+    Assertions.assertArrayEquals(new Long[] {1L, 64L, null, 100L}, response);
   }
 
   @Test

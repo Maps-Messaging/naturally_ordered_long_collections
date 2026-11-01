@@ -210,24 +210,23 @@ class NaturalOrderedLongListTest {
   }
 
   @Test
-  void addAllWithIndexAddsInNaturalOrder() {
+  void addAllWithIndexIsUnsupported() {
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(64);
     NaturalOrderedLongList noll = new NaturalOrderedLongList(0, factory);
 
-    Assertions.assertTrue(noll.addAll(0, Arrays.asList(64L, 1L, 65536L)));
-
-    Assertions.assertArrayEquals(new Object[] {1L, 64L, 65536L}, noll.toArray());
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> noll.addAll(0, Arrays.asList(64L, 1L, 65536L)));
+    Assertions.assertTrue(noll.isEmpty());
   }
 
   @Test
-  void addAllWithIndexReturnsFalseWhenOnlyAddingDuplicates() {
+  void addAllWithIndexRejectsDuplicatesWithoutChangingList() {
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(64);
     NaturalOrderedLongList noll = new NaturalOrderedLongList(0, factory);
 
     noll.add(1L);
     noll.add(64L);
 
-    Assertions.assertFalse(noll.addAll(0, Arrays.asList(1L, 64L)));
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> noll.addAll(0, Arrays.asList(1L, 64L)));
     Assertions.assertArrayEquals(new Object[] {1L, 64L}, noll.toArray());
   }
 
@@ -335,7 +334,8 @@ class NaturalOrderedLongListTest {
     noll.clear();
     Assertions.assertEquals(0, noll.size());
 
-    noll.addAll(0, list);
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> noll.addAll(0, list));
+    noll.addAll(list);
     Assertions.assertEquals(1000, noll.size());
 
     list.clear();
@@ -373,7 +373,8 @@ class NaturalOrderedLongListTest {
     noll.clear();
     Assertions.assertEquals(0, noll.size());
 
-    noll.addAll(0, list);
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> noll.addAll(0, list));
+    noll.addAll(list);
     Assertions.assertEquals(1000, noll.size());
 
     list.clear();

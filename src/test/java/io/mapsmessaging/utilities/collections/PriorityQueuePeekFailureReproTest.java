@@ -22,6 +22,7 @@ package io.mapsmessaging.utilities.collections;
 
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactoryImpl;
 import io.mapsmessaging.utilities.collections.bitset.OffsetBitSet;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.Queue;
 import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PriorityQueuePeekFailureReproTest {
 
@@ -47,7 +48,8 @@ class PriorityQueuePeekFailureReproTest {
     return (TreeMap<Long, OffsetBitSet>) field.get(collection);
   }
 
-  void priorityQueuePeek_shouldThrowIfInnerQueueHasReleasedBitset_whenPeekUsesIsEmptyGate() throws Exception {
+  @Test
+  void priorityQueuePeekRejectsExternallyReleasedBitset() throws Exception {
     BitSetFactoryImpl bitSetFactory = new BitSetFactoryImpl(1024);
 
     ConcurrentNaturalOrderedLongQueue innerQueue = new ConcurrentNaturalOrderedLongQueue(1L, bitSetFactory);
@@ -63,6 +65,6 @@ class PriorityQueuePeekFailureReproTest {
     List<Queue<Long>> structure = pq.getPriorityStructure();
     structure.set(2, innerQueue);
 
-    assertNull(pq.peek());
+    assertThrows(IllegalStateException.class, pq::peek);
   }
 }
