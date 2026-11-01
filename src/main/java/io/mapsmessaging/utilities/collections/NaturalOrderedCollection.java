@@ -402,35 +402,48 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   class LongIterator implements Iterator<Long> {
 
-    ArrayList<Iterator<Long>> iterators;
-    Iterator<Long> active;
+    private final Iterator<Map.Entry<Long, OffsetBitSet>> windows;
+    private Map.Entry<Long, OffsetBitSet> activeWindow;
+    private Iterator<Long> active;
     private boolean prepared;
     private Long lastReturned;
 
     LongIterator() {
-      iterators = new ArrayList<>();
-      for (OffsetBitSet bitMap : tree.values()) {
-        iterators.add(bitMap.iterator());
+      List<Map.Entry<Long, OffsetBitSet>> snapshot = new ArrayList<>(tree.size());
+      for (Map.Entry<Long, OffsetBitSet> entry : tree.entrySet()) {
+        snapshot.add(new AbstractMap.SimpleImmutableEntry<>(entry));
       }
+      windows = snapshot.iterator();
     }
 
     @Override
     public boolean hasNext() {
-      if (prepared) {
-        return true;
-      }
       while (true) {
-        if (active == null) {
-          if (iterators.isEmpty()) {
-            return false;
+        if (active != null) {
+          if (tree.get(activeWindow.getKey()) != activeWindow.getValue()) {
+            active = null;
+            activeWindow = null;
+            prepared = false;
+          } else {
+            if (prepared) {
+              return true;
+            }
+            if (active.hasNext()) {
+              prepared = true;
+              return true;
+            }
+            active = null;
+            activeWindow = null;
           }
-          active = iterators.remove(0);
         }
-        if (active.hasNext()) {
-          prepared = true;
-          return true;
+        if (!windows.hasNext()) {
+          return false;
         }
-        active = null;
+        Map.Entry<Long, OffsetBitSet> window = windows.next();
+        if (tree.get(window.getKey()) == window.getValue()) {
+          activeWindow = window;
+          active = window.getValue().iterator();
+        }
       }
     }
 
