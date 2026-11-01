@@ -202,4 +202,5 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
         action.accept(next());
       }
     }
+  }
 }
