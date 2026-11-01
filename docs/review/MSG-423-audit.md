@@ -69,6 +69,28 @@ These findings are distinct from the four originally alleged signed-long defects
 
 `SignedLongReferenceModelAuditTest` adds reproducible, seeded `TreeSet<Long>` model checks across window sizes `1,3,7,63,64,65,257,8192` for heap and direct-buffer factories. The operation sequence covers `offer/remove/poll/peek/element/contains`, extrema, negative window neighbours, duplicates and iteration. It is **not yet executed**; passing source review is not test evidence.
 
+## 4a. Scoped corrections following the 506-test baseline
+
+The user reported a local `mvn clean test` result of **506 tests, 0 failures, 0 errors, 0 skips** after the isolated shared-file fixture correction. This result **predates** the following changes; no post-correction Maven result has been supplied.
+
+**High-frequency invariant (explicit instruction):** When the final bitset window in a queue becomes empty during polling or individual removal, retain that window for reuse. When another window remains, empty windows may be released. Do not replace this with unconditional allocation/release or add snapshot allocations to the server's hot iterator path.
+
+| Finding | Current correction status | Scope and evidence still required |
+| --- | --- | --- |
+| F-01 | Code and regression tests pushed; **unverified** | `NaturalOrderedCollection.toArray(T[])` and `PriorityCollection.toArray(T[])` now respect destination array sizing and the null terminator. Existing incorrect larger-array test corrected. |
+| F-02 | Code and regressions pushed; **unverified** | Collection/list/bitset iterators now throw on exhaustion; bitset iterator removal rejects repeated calls. Additional iterator conformance under random operation sequences remains. |
+| F-03 | Code and regression pushed; **unverified** | Priority iterator removal decrements `entryCount`, so `isEmpty` and `contains` do not require a prior `size()` to repair count. |
+| F-04 | Code and regressions pushed; **unverified** | Priority bulk add/remove changed-state results corrected; copying from a differently-sized priority layout now throws explicitly instead of silently truncating. |
+| F-05 | Code and existing tests updated; **unverified** | `NaturalOrderedLongList.addAll(index,values)` rejects indexed insertion consistently with the other unsupported indexed operations. This is a visible contract change; validate downstream callers before release. |
+| F-06 | **Partially addressed** | Previously unannotated `PriorityQueuePeekFailureReproTest` is now a JUnit test with explicit exception assertion. `ForcedReleaseRaceTest` remains a non-deterministic diagnostic method, not an executable JUnit test. Its concurrency semantics are a decision under F-07, not silently enabled. |
+| F-07 | **Unresolved; explicit design decision required** | A synchronized `iterator()` factory method does not guard subsequent iterator operations against release. Fixing this through a snapshot would add an O(n) allocation on a potentially high-frequency server path, contrary to the explicit performance constraint. Define external-lock vs snapshot contract and verify before implementation. |
+| F-08 | Code and regressions pushed; **unverified** | `NaturalOrderedLongQueue.poll()` now uses iteration instead of recursion, while retaining the last empty window and releasing an empty window only if another exists. `NaturalOrderedCollection.remove(Object)` preserves the same final-window reuse invariant. |
+| F-09 | **Unresolved; platform evidence required** | Deterministic buffer unmapping uses JVM-internal reflection. Turning a failed unmap into a fatal exception or adding a new resource-management strategy could alter running-server error handling; first verify behaviour on supported JDKs and define desired failure policy. |
+
+**Important additional contract conflict:** The user requested **no special `-1` return**. The signed-`long` queue API uses `null` for empty and treats `-1L` as data. However, `PriorityCollection.removeAndGetPriority()` still returns primitive `-1` for missing priority; the server's `BaseMessageStateManager.rollback()` explicitly relies on that sentinel. Internal integer bitset searches also use `-1` to indicate no local (nonnegative) bit index. Changing these contracts requires coordinated API and consumer decisions; no breaking change has been made silently.
+
+**Additional source-level findings reported for disposition, not included in F-01–F-09 correction scope:** A stale inactive source entry in `NaturalOrderedCollection.internalAddAll()` can remove the destination's existing window; `HybridBitSetFactoryImpl.get()` returns raw backing bitsets whereas `release()` handles only delegating wrappers; `DelegatingOffsetBitSet.getBitSet()` is inherited and can reference pre-migration backing; legacy file migration truncates and rewrites the sole source file in place; `ManagedBitSetFactoryImpl.release()` relies on equality based only on window start; and `NaturalOrderedLongList` implements `List` without implementing the usual list equality semantics. These are source-level concerns needing focused reproduction, impact classification and explicit decisions before additional edits.
+
 ## 5. Verification status and required gates
 
 - [x] Confirm `development` baseline SHA and create MSG-423 branch.
