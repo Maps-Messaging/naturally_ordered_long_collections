@@ -61,6 +61,11 @@ public class DelegatingOffsetBitSet extends OffsetBitSet {
   }
 
   @Override
+  public BitSet getBitSet() {
+    return delegate.getBitSet();
+  }
+
+  @Override
   public boolean set(long bit) {
     return delegate.set(bit);
   }

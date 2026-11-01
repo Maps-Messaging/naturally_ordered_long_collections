@@ -25,11 +25,14 @@ import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
+
+  private volatile long modificationCount;
 
   public ConcurrentNaturalOrderedLongQueue() {
     super();
@@ -51,7 +54,11 @@ public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
 
   @Override
   public synchronized Long poll() {
-    return super.poll();
+    Long result = super.poll();
+    if (result != null) {
+      modificationCount++;
+    }
+    return result;
   }
 
   @Override
@@ -76,18 +83,30 @@ public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
 
   @Override
   public synchronized void clear() {
+    boolean hadWindows = !tree.isEmpty();
     super.clear();
+    if (hadWindows) {
+      modificationCount++;
+    }
   }
 
   // From NaturalOrderedCollection
   @Override
   public synchronized boolean add(Long aLong) {
-    return super.add(aLong);
+    boolean changed = super.add(aLong);
+    if (changed) {
+      modificationCount++;
+    }
+    return changed;
   }
 
   @Override
   public synchronized boolean remove(Object o) {
-    return super.remove(o);
+    boolean changed = super.remove(o);
+    if (changed) {
+      modificationCount++;
+    }
+    return changed;
   }
 
   @Override
@@ -102,22 +121,38 @@ public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
 
   @Override
   public synchronized boolean addAll(@NonNull Collection<? extends Long> c) {
-    return super.addAll(c);
+    boolean changed = super.addAll(c);
+    if (changed) {
+      modificationCount++;
+    }
+    return changed;
   }
 
   @Override
   public synchronized boolean removeAll(@NonNull Collection<?> c) {
-    return super.removeAll(c);
+    boolean changed = super.removeAll(c);
+    if (changed) {
+      modificationCount++;
+    }
+    return changed;
   }
 
   @Override
   public synchronized boolean retainAll(@NonNull Collection<?> c) {
-    return super.retainAll(c);
+    boolean changed = super.retainAll(c);
+    if (changed) {
+      modificationCount++;
+    }
+    return changed;
   }
 
   @Override
   public synchronized boolean removeIf(Predicate<? super Long> filter) {
-    return super.removeIf(filter);
+    boolean changed = super.removeIf(filter);
+    if (changed) {
+      modificationCount++;
+    }
+    return changed;
   }
 
   @Override
@@ -137,12 +172,44 @@ public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
 
   @Override
   public synchronized @NotNull Iterator<Long> iterator() {
-    return super.iterator();
+    Iterator<Long> delegate = super.iterator();
+    return new Iterator<>() {
+      private long expectedCount = modificationCount;
+
+      private void checkForModification() {
+        if (expectedCount != modificationCount) {
+          throw new ConcurrentModificationException();
+        }
+      }
+
+      @Override
+      public boolean hasNext() {
+        checkForModification();
+        return delegate.hasNext();
+      }
+
+      @Override
+      public Long next() {
+        checkForModification();
+        return delegate.next();
+      }
+
+      @Override
+      public void remove() {
+        checkForModification();
+        delegate.remove();
+        expectedCount = modificationCount;
+      }
+    };
   }
 
   @Override
   public synchronized void close() {
+    boolean hadWindows = !tree.isEmpty();
     super.close();
+    if (hadWindows) {
+      modificationCount++;
+    }
   }
 
   // Optional: expose unique ID if needed

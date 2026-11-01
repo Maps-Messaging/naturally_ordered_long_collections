@@ -66,11 +66,32 @@ public class HybridBitSetFactoryImpl extends BitSetFactory {
   }
 
   @Override
-  public List<OffsetBitSet> get(long uniqueId) {
+  public synchronized List<OffsetBitSet> get(long uniqueId) {
     List<OffsetBitSet> result = new ArrayList<>();
-    result.addAll(memoryFactory.get(uniqueId));
-    result.addAll(fileFactory.get(uniqueId));
+    List<DelegatingOffsetBitSet> delegates = activeDelegates.computeIfAbsent(uniqueId, k -> new ArrayList<>());
+    addBackings(uniqueId, memoryFactory, delegates, result);
+    addBackings(uniqueId, fileFactory, delegates, result);
+    if (delegates.isEmpty()) {
+      activeDelegates.remove(uniqueId);
+    }
     return result;
+  }
+
+  private void addBackings(long uniqueId, BitSetFactory backingFactory, List<DelegatingOffsetBitSet> delegates, List<OffsetBitSet> result) {
+    for (OffsetBitSet backing : backingFactory.get(uniqueId)) {
+      DelegatingOffsetBitSet wrapper = null;
+      for (DelegatingOffsetBitSet existing : delegates) {
+        if (existing.getDelegate() == backing) {
+          wrapper = existing;
+          break;
+        }
+      }
+      if (wrapper == null) {
+        wrapper = new DelegatingOffsetBitSet(backing, backingFactory, uniqueId);
+        delegates.add(wrapper);
+      }
+      result.add(wrapper);
+    }
   }
 
   @Override
