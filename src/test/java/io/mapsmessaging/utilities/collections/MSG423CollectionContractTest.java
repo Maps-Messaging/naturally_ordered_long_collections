@@ -181,6 +181,17 @@ class MSG423CollectionContractTest {
   }
 
   @Test
+  void removingAllFromSelfClearsPriorityCollection() {
+    PriorityCollection<Long> collection = new PriorityCollection<>(3, null);
+    collection.add(1L, 1);
+    collection.add(2L, 2);
+    Assertions.assertTrue(collection.removeAll(collection));
+    Assertions.assertTrue(collection.isEmpty());
+    Assertions.assertEquals(0, collection.size());
+    Assertions.assertFalse(collection.removeAll(collection));
+  }
+
+  @Test
   void priorityTypedArrayDoesNotTruncateOrLeaveStaleTerminator() {
     PriorityCollection<Long> collection = new PriorityCollection<>(3, null);
     collection.add(1L, 1);
