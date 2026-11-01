@@ -31,7 +31,11 @@ class MSG423CollectionContractTest {
     private int releases;
 
     TrackingFactory() {
-      super(64);
+      this(64);
+    }
+
+    TrackingFactory(int windowSize) {
+      super(windowSize);
     }
 
     @Override
@@ -91,6 +95,41 @@ class MSG423CollectionContractTest {
     queue.offer(2L);
     Assertions.assertEquals(1, factory.openings);
     Assertions.assertEquals(0, factory.releases);
+  }
+
+  @Test
+  void monotonicAddRemoveRecyclesOneWindowAtEachBoundary() {
+    TrackingFactory factory = new TrackingFactory(4096);
+    NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue(1L, factory);
+
+    for (long id = 0; id <= 1_000_000L; id++) {
+      Assertions.assertTrue(queue.offer(id));
+      Assertions.assertTrue(queue.remove(id));
+    }
+
+    Assertions.assertTrue(queue.isEmpty());
+    Assertions.assertEquals(245, factory.openings, "One window opening per 4096 IDs, not per event");
+    Assertions.assertEquals(244, factory.releases, "Only old empty windows should be released");
+    Assertions.assertTrue(queue.offer(1_000_001L));
+    Assertions.assertTrue(queue.remove(1_000_001L));
+    Assertions.assertEquals(245, factory.openings, "The final empty window must remain reusable");
+  }
+
+  @Test
+  void repeatedAddRemoveInSameWindowDoesNotReallocate() {
+    TrackingFactory factory = new TrackingFactory(4096);
+    NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue(1L, factory);
+
+    for (int iteration = 0; iteration < 10_000; iteration++) {
+      Assertions.assertTrue(queue.offer(0L));
+      Assertions.assertTrue(queue.remove(0L));
+      Assertions.assertTrue(queue.offer(1L));
+      Assertions.assertTrue(queue.remove(1L));
+    }
+
+    Assertions.assertEquals(1, factory.openings);
+    Assertions.assertEquals(0, factory.releases);
+    Assertions.assertTrue(queue.isEmpty());
   }
 
   @Test

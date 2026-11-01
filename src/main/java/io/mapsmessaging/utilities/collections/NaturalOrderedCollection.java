@@ -143,6 +143,13 @@ public class NaturalOrderedCollection implements Collection<Long> {
   public boolean add(Long aLong) {
     OffsetBitSet active = locate(aLong);
     if (active == null) {
+      if (tree.size() == 1) {
+        OffsetBitSet cached = tree.firstEntry().getValue();
+        if (cached.isEmpty()) {
+          tree.remove(cached.getStart());
+          factory.release(cached);
+        }
+      }
       try {
         active = factory.open(uniqueId, aLong);
       } catch (IOException e) {
