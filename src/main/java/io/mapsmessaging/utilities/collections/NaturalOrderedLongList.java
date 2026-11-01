@@ -138,10 +138,10 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
 
     @Override
     public Long next() {
-      if (active != null) {
-        return active.next();
+      if (!hasNext()) {
+        throw new NoSuchElementException();
       }
-      return null;
+      return active.next();
     }
 
     @Override
@@ -170,10 +170,10 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
 
     @Override
     public Long previous() {
-      if (active != null) {
-        return active.previous();
+      if (!hasPrevious()) {
+        throw new NoSuchElementException();
       }
-      return null;
+      return active.previous();
     }
 
     @Override
