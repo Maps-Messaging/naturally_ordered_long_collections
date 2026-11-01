@@ -21,8 +21,10 @@ package io.mapsmessaging.utilities.collections;
 import io.mapsmessaging.utilities.collections.bitset.SharedFileBitSetFactoryImpl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -34,11 +36,11 @@ class PriorityCorruptionTest {
   private static final long BASE_ID_MASK = (1L << PRIORITY_SHIFT) - 1; // lower bits only
 
   @Test
-  void testCorruption() throws IOException, InterruptedException {
+  void testCorruption(@TempDir Path tempDir) throws IOException, InterruptedException {
 
     long baseUniqueId = 1L;
-    SharedFileBitSetFactoryImpl sharedFileBitSetFactory =
-        new SharedFileBitSetFactoryImpl("./testCorruption.bin", 4, 4096 );
+    try (SharedFileBitSetFactoryImpl sharedFileBitSetFactory =
+        new SharedFileBitSetFactoryImpl(tempDir.resolve("testCorruption.bin").toString(), 4, 4096)) {
     PriorityQueue<Long> queue1 = createQueue(sharedFileBitSetFactory, baseUniqueId);
     for(long x = 0; x < 10; x++){
       queue1.add(x, 1);
@@ -68,6 +70,7 @@ class PriorityCorruptionTest {
     queue1.clear();
     Thread.sleep(11_000L);
     queue2.clear();
+    }
   }
 
   private PriorityQueue<Long> createQueue(SharedFileBitSetFactoryImpl  sharedFileBitSetFactory, long id) {
