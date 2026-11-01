@@ -127,11 +127,16 @@ public class NaturalOrderedCollection implements Collection<Long> {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T[] toArray(T[] a) {
-    Iterator<Long> itr = iterator();
-    for (var x = 0; x < a.length && itr.hasNext(); x++) {
-      a[x] = (T) itr.next();
+    int count = size();
+    T[] result = a.length >= count ? a : (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), count);
+    int index = 0;
+    for (Long value : this) {
+      result[index++] = (T) value;
     }
-    return a;
+    if (result.length > index) {
+      result[index] = null;
+    }
+    return result;
   }
 
   @Override
@@ -154,7 +159,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
       OffsetBitSet active = locate(value);
       if (active != null) {
         boolean result = active.clear(value);
-        if (result && active.isEmpty()) {
+        if (result && active.isEmpty() && tree.size() > 1) {
           tree.remove(active.getStart());
           factory.release(active);
         }
@@ -381,6 +386,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
     ArrayList<Iterator<Long>> iterators;
     Iterator<Long> active;
+    private boolean prepared;
 
     LongIterator() {
       iterators = new ArrayList<>();
@@ -391,26 +397,31 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
     @Override
     public boolean hasNext() {
-      if (active == null) {
-        if (!iterators.isEmpty()) {
-          active = iterators.remove(0);
-        } else {
-          return false;
-        }
-      }
-      if (active.hasNext()) {
+      if (prepared) {
         return true;
       }
-      active = null;
-      return hasNext();
+      while (true) {
+        if (active == null) {
+          if (iterators.isEmpty()) {
+            return false;
+          }
+          active = iterators.remove(0);
+        }
+        if (active.hasNext()) {
+          prepared = true;
+          return true;
+        }
+        active = null;
+      }
     }
 
     @Override
     public Long next() {
-      if (active != null) {
-        return active.next();
+      if (!hasNext()) {
+        throw new NoSuchElementException();
       }
-      return null;
+      prepared = false;
+      return active.next();
     }
 
     @Override

@@ -185,24 +185,27 @@ public class PriorityCollection<T> implements Collection<T> {
 
 
   @Override
+  @SuppressWarnings("unchecked")
   public boolean addAll(Collection<? extends T> rhsCollection) {
-    if (rhsCollection instanceof PriorityCollection) {
-      // Copy, but maintain the priority
-      PriorityCollection<T> priorityRhs = (PriorityCollection<T>) rhsCollection;
-      for (var x = 0; x < priorityStructure.size(); x++) {
-        Queue<T> lhs = priorityStructure.get(x);
-        lhs.addAll(priorityRhs.priorityStructure.get(x));
+    if (rhsCollection == this) {
+      return false;
+    }
+    boolean changed = false;
+    if (rhsCollection instanceof PriorityCollection<?> priorityRhs) {
+      if (priorityRhs.prioritySize != prioritySize) {
+        throw new IllegalArgumentException("Priority counts must match");
+      }
+      for (int priority = 0; priority < prioritySize; priority++) {
+        for (T entry : (Queue<T>) priorityRhs.priorityStructure.get(priority)) {
+          changed = push(entry, priority) || changed;
+        }
       }
     } else {
       for (T entry : rhsCollection) {
-        if (!add(entry)) {
-          entryCount.set(size());
-          return false;
-        }
+        changed = add(entry) || changed;
       }
     }
-    entryCount.set(size());
-    return true;
+    return changed;
   }
 
   public boolean addAll(Collection<? extends T> c, int priority) {
@@ -224,11 +227,7 @@ public class PriorityCollection<T> implements Collection<T> {
 
   @Override
   public <T1> T1[] toArray(T1[] a) {
-    Iterator<?> itr = iterator();
-    for (var x = 0; x < a.length && itr.hasNext(); x++) {
-      a[x] = (T1) itr.next();
-    }
-    return a;
+    return new ArrayList<>(this).toArray(a);
   }
 
   @Override
@@ -243,13 +242,11 @@ public class PriorityCollection<T> implements Collection<T> {
 
   @Override
   public boolean removeAll(Collection<?> c) {
-    var result = true;
-    for (Object l : c) {
-      if (!remove(l)) {
-        result = false;
-      }
+    boolean changed = false;
+    for (Object value : c) {
+      changed = remove(value) || changed;
     }
-    return result;
+    return changed;
   }
 
   @Override
@@ -368,11 +365,12 @@ public class PriorityCollection<T> implements Collection<T> {
 
     @Override
     public void remove() {
-      if (active != null) {
-        active.remove();
-      } else {
-        throw new NoSuchElementException();
+      if (active == null) {
+        throw new IllegalStateException("next() has not been called or entry already removed");
       }
+      active.remove();
+      entryCount.decrementAndGet();
+      active = null;
     }
   }
 }

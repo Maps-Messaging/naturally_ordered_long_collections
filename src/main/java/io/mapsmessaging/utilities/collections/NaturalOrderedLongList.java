@@ -40,7 +40,7 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
 
   @Override
   public boolean addAll(int index, @NonNull @NotNull Collection<? extends Long> c) {
-    return super.addAll(c);
+    throw new UnsupportedOperationException("Index-based operations are not supported by a naturally ordered list");
   }
 
   @Override

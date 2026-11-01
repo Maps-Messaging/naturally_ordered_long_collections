@@ -40,45 +40,37 @@ class BitSetListIterator implements ListIterator<Integer> {
 
   @Override
   public boolean hasNext() {
-    return (active.nextSetBit(current) != -1);
+    return active.nextSetBit(current) >= 0;
   }
 
   @Override
   public Integer next() {
-    if (current > active.length()) {
+    int nextBit = active.nextSetBit(current);
+    if (nextBit < 0) {
       throw new NoSuchElementException();
     }
-    selected = active.nextSetBit(current);
-    if (selected == -1) {
-      throw new NoSuchElementException();
-    }
-    current = selected + 1;
-    return selected;
+    selected = nextBit;
+    current = nextBit + 1;
+    return nextBit;
   }
 
   @Override
   public boolean hasPrevious() {
-    if (current >= 0) {
-      if (current >= active.length()) {
-        current--;
-      }
-      int previousSet = active.previousSetBit(current);
-      return previousSet != -1;
-    }
-    return false;
+    return current > 0 && active.previousSetBit(current - 1) >= 0;
   }
 
   @Override
   public Integer previous() {
-    if (current < 0) {
+    if (current <= 0) {
       throw new NoSuchElementException();
     }
-    selected = active.previousSetBit(current);
-    if (current == -1) {
+    int previousBit = active.previousSetBit(current - 1);
+    if (previousBit < 0) {
       throw new NoSuchElementException();
     }
-    current = selected - 1;
-    return selected;
+    selected = previousBit;
+    current = previousBit;
+    return previousBit;
   }
 
   @Override
@@ -93,9 +85,11 @@ class BitSetListIterator implements ListIterator<Integer> {
 
   @Override
   public void remove() {
-    if (selected != -1) {
-      active.clear(selected);
+    if (selected < 0) {
+      throw new IllegalStateException("next()/previous() has not been called or entry already removed");
     }
+    active.clear(selected);
+    selected = -1;
   }
 
   @Override
