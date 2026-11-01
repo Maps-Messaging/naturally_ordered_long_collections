@@ -21,15 +21,20 @@
 package io.mapsmessaging.utilities.collections;
 
 import io.mapsmessaging.utilities.collections.bitset.BitSetFactory;
+import io.mapsmessaging.utilities.collections.bitset.OffsetBitSet;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.NavigableMap;
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
+
+  private long closeEpoch;
 
   public ConcurrentNaturalOrderedLongQueue() {
     super();
@@ -135,13 +140,73 @@ public class ConcurrentNaturalOrderedLongQueue extends NaturalOrderedLongQueue {
     super.forEach(action);
   }
 
+  private Long nextAfter(Long cursor) {
+    if (cursor != null && cursor == Long.MAX_VALUE) {
+      return null;
+    }
+    NavigableMap<Long, OffsetBitSet> windows = cursor == null ? tree : tree.tailMap(factory.getStartIndex(cursor), true);
+    for (OffsetBitSet window : windows.values()) {
+      long first = cursor != null && window.getStart() <= cursor ? cursor + 1L : window.getStart();
+      Long candidate = window.nextSetBit(first);
+      if (candidate != null) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
   @Override
   public synchronized @NotNull Iterator<Long> iterator() {
-    return super.iterator();
+    return new Iterator<>() {
+      private final long expectedCloseEpoch = closeEpoch;
+      private Long cursor;
+      private boolean canRemove;
+
+      private void checkNotClosed() {
+        if (expectedCloseEpoch != closeEpoch) {
+          throw new IllegalStateException("Queue was closed during iteration");
+        }
+      }
+
+      @Override
+      public boolean hasNext() {
+        synchronized (ConcurrentNaturalOrderedLongQueue.this) {
+          checkNotClosed();
+          return nextAfter(cursor) != null;
+        }
+      }
+
+      @Override
+      public Long next() {
+        synchronized (ConcurrentNaturalOrderedLongQueue.this) {
+          checkNotClosed();
+          Long value = nextAfter(cursor);
+          if (value == null) {
+            throw new NoSuchElementException();
+          }
+          cursor = value;
+          canRemove = true;
+          return value;
+        }
+      }
+
+      @Override
+      public void remove() {
+        synchronized (ConcurrentNaturalOrderedLongQueue.this) {
+          checkNotClosed();
+          if (!canRemove) {
+            throw new IllegalStateException("next() has not been called or element already removed");
+          }
+          ConcurrentNaturalOrderedLongQueue.this.remove(cursor);
+          canRemove = false;
+        }
+      }
+    };
   }
 
   @Override
   public synchronized void close() {
+    closeEpoch++;
     super.close();
   }
 

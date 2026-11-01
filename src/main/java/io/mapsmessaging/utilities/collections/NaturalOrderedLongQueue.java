@@ -53,22 +53,23 @@ public class NaturalOrderedLongQueue extends NaturalOrderedCollection implements
 
   @Override
   public Long poll() {
-    if (tree.isEmpty()) {
-      return null;
-    }
-    OffsetBitSet current = tree.firstEntry().getValue();
-
-    Long value = current.nextSetBitAndClear(current.getStart());
-    if (value != null) {
-      if (current.isEmpty()) {
-        tree.remove(current.getStart());
-        factory.release(current);
+    while (!tree.isEmpty()) {
+      OffsetBitSet current = tree.firstEntry().getValue();
+      Long value = current.nextSetBitAndClear(current.getStart());
+      if (value != null) {
+        if (current.isEmpty() && tree.size() > 1) {
+          tree.remove(current.getStart());
+          factory.release(current);
+        }
+        return value;
       }
-      return value;
+      if (tree.size() == 1) {
+        return null;
+      }
+      tree.remove(current.getStart());
+      factory.release(current);
     }
-    tree.remove(current.getStart());
-    factory.release(current);
-    return poll();
+    return null;
   }
 
   @Override

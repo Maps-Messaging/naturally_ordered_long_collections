@@ -185,24 +185,27 @@ public class PriorityCollection<T> implements Collection<T> {
 
 
   @Override
+  @SuppressWarnings("unchecked")
   public boolean addAll(Collection<? extends T> rhsCollection) {
-    if (rhsCollection instanceof PriorityCollection) {
-      // Copy, but maintain the priority
-      PriorityCollection<T> priorityRhs = (PriorityCollection<T>) rhsCollection;
-      for (var x = 0; x < priorityStructure.size(); x++) {
-        Queue<T> lhs = priorityStructure.get(x);
-        lhs.addAll(priorityRhs.priorityStructure.get(x));
+    if (rhsCollection == this) {
+      return false;
+    }
+    boolean changed = false;
+    if (rhsCollection instanceof PriorityCollection<?> priorityRhs) {
+      if (priorityRhs.prioritySize != prioritySize) {
+        throw new IllegalArgumentException("Priority counts must match");
+      }
+      for (int priority = 0; priority < prioritySize; priority++) {
+        for (T entry : (Queue<T>) priorityRhs.priorityStructure.get(priority)) {
+          changed = push(entry, priority) || changed;
+        }
       }
     } else {
       for (T entry : rhsCollection) {
-        if (!add(entry)) {
-          entryCount.set(size());
-          return false;
-        }
+        changed = add(entry) || changed;
       }
     }
-    entryCount.set(size());
-    return true;
+    return changed;
   }
 
   public boolean addAll(Collection<? extends T> c, int priority) {
@@ -224,11 +227,7 @@ public class PriorityCollection<T> implements Collection<T> {
 
   @Override
   public <T1> T1[] toArray(T1[] a) {
-    Iterator<?> itr = iterator();
-    for (var x = 0; x < a.length && itr.hasNext(); x++) {
-      a[x] = (T1) itr.next();
-    }
-    return a;
+    return new ArrayList<>(this).toArray(a);
   }
 
   @Override
@@ -243,13 +242,16 @@ public class PriorityCollection<T> implements Collection<T> {
 
   @Override
   public boolean removeAll(Collection<?> c) {
-    var result = true;
-    for (Object l : c) {
-      if (!remove(l)) {
-        result = false;
-      }
+    if (c == this) {
+      boolean changed = !isEmpty();
+      clear();
+      return changed;
     }
-    return result;
+    boolean changed = false;
+    for (Object value : c) {
+      changed = remove(value) || changed;
+    }
+    return changed;
   }
 
   @Override
@@ -327,12 +329,18 @@ public class PriorityCollection<T> implements Collection<T> {
   private class PriorityCollectionIterator implements Iterator<T> {
 
     private final List<Iterator<T>> iterators;
+    private final List<Queue<T>> sources;
     private Iterator<T> active;
+    private Queue<T> activeSource;
+    private T lastReturned;
 
     public PriorityCollectionIterator() {
       iterators = new ArrayList<>();
+      sources = new ArrayList<>();
       for (int x = prioritySize - 1; x >= 0; x--) {
-        iterators.add(priorityStructure.get(x).iterator());
+        Queue<T> queue = priorityStructure.get(x);
+        sources.add(queue);
+        iterators.add(queue.iterator());
       }
       active = null;
     }
@@ -347,6 +355,7 @@ public class PriorityCollection<T> implements Collection<T> {
         // Top iterator is empty, remove it and check the next one
         //
         iterators.remove(0);
+        sources.remove(0);
         return hasNext();
       }
       return false;
@@ -357,9 +366,12 @@ public class PriorityCollection<T> implements Collection<T> {
       if (!iterators.isEmpty()) {
         if (iterators.get(0).hasNext()) {
           active = iterators.get(0);
-          return active.next();
+          activeSource = sources.get(0);
+          lastReturned = active.next();
+          return lastReturned;
         } else {
           iterators.remove(0);
+          sources.remove(0);
           return next();
         }
       }
@@ -368,11 +380,22 @@ public class PriorityCollection<T> implements Collection<T> {
 
     @Override
     public void remove() {
-      if (active != null) {
-        active.remove();
-      } else {
-        throw new NoSuchElementException();
+      if (active == null) {
+        throw new IllegalStateException("next() has not been called or entry already removed");
       }
+      if (activeSource instanceof NaturalOrderedCollection) {
+        synchronized (activeSource) {
+          if (activeSource.remove(lastReturned)) {
+            entryCount.decrementAndGet();
+          }
+        }
+      } else {
+        active.remove();
+        entryCount.decrementAndGet();
+      }
+      active = null;
+      activeSource = null;
+      lastReturned = null;
     }
   }
 }

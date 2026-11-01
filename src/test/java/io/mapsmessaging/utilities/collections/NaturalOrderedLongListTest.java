@@ -62,8 +62,8 @@ class NaturalOrderedLongListTest {
 
     Assertions.assertFalse(iterator.hasNext());
     Assertions.assertFalse(iterator.hasPrevious());
-    Assertions.assertNull(iterator.next());
-    Assertions.assertNull(iterator.previous());
+    Assertions.assertThrows(java.util.NoSuchElementException.class, iterator::next);
+    Assertions.assertThrows(java.util.NoSuchElementException.class, iterator::previous);
   }
 
   @Test
@@ -79,8 +79,8 @@ class NaturalOrderedLongListTest {
 
     Assertions.assertFalse(iterator.hasNext());
     Assertions.assertFalse(iterator.hasPrevious());
-    Assertions.assertNull(iterator.next());
-    Assertions.assertNull(iterator.previous());
+    Assertions.assertThrows(java.util.NoSuchElementException.class, iterator::next);
+    Assertions.assertThrows(java.util.NoSuchElementException.class, iterator::previous);
   }
 
   @Test
@@ -210,24 +210,56 @@ class NaturalOrderedLongListTest {
   }
 
   @Test
-  void addAllWithIndexAddsInNaturalOrder() {
+  void listIteratorAddAtEndAllowsReverseTraversalOfNewWindow() {
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(64);
     NaturalOrderedLongList noll = new NaturalOrderedLongList(0, factory);
+    noll.add(63L);
 
-    Assertions.assertTrue(noll.addAll(0, Arrays.asList(64L, 1L, 65536L)));
+    ListIterator<Long> iterator = noll.listIterator();
+    Assertions.assertEquals(63L, iterator.next());
+    Assertions.assertFalse(iterator.hasNext());
+    iterator.add(64L);
 
-    Assertions.assertArrayEquals(new Object[] {1L, 64L, 65536L}, noll.toArray());
+    Assertions.assertTrue(iterator.hasPrevious());
+    Assertions.assertEquals(64L, iterator.previous());
+    Assertions.assertEquals(63L, iterator.previous());
+    Assertions.assertThrows(java.util.NoSuchElementException.class, iterator::previous);
   }
 
   @Test
-  void addAllWithIndexReturnsFalseWhenOnlyAddingDuplicates() {
+  void listIteratorAddAtEndOfExistingWindowAdvancesCursor() {
+    ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(64);
+    NaturalOrderedLongList noll = new NaturalOrderedLongList(0, factory);
+    noll.add(1L);
+
+    ListIterator<Long> iterator = noll.listIterator();
+    Assertions.assertEquals(1L, iterator.next());
+    Assertions.assertFalse(iterator.hasNext());
+    iterator.add(2L);
+
+    Assertions.assertEquals(2L, iterator.previous());
+    Assertions.assertEquals(1L, iterator.previous());
+    Assertions.assertThrows(java.util.NoSuchElementException.class, iterator::previous);
+  }
+
+  @Test
+  void addAllWithIndexIsUnsupported() {
+    ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(64);
+    NaturalOrderedLongList noll = new NaturalOrderedLongList(0, factory);
+
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> noll.addAll(0, Arrays.asList(64L, 1L, 65536L)));
+    Assertions.assertTrue(noll.isEmpty());
+  }
+
+  @Test
+  void addAllWithIndexRejectsDuplicatesWithoutChangingList() {
     ByteBufferBitSetFactoryImpl factory = new ByteBufferBitSetFactoryImpl(64);
     NaturalOrderedLongList noll = new NaturalOrderedLongList(0, factory);
 
     noll.add(1L);
     noll.add(64L);
 
-    Assertions.assertFalse(noll.addAll(0, Arrays.asList(1L, 64L)));
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> noll.addAll(0, Arrays.asList(1L, 64L)));
     Assertions.assertArrayEquals(new Object[] {1L, 64L}, noll.toArray());
   }
 
@@ -335,7 +367,8 @@ class NaturalOrderedLongListTest {
     noll.clear();
     Assertions.assertEquals(0, noll.size());
 
-    noll.addAll(0, list);
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> noll.addAll(0, list));
+    noll.addAll(list);
     Assertions.assertEquals(1000, noll.size());
 
     list.clear();
@@ -373,7 +406,8 @@ class NaturalOrderedLongListTest {
     noll.clear();
     Assertions.assertEquals(0, noll.size());
 
-    noll.addAll(0, list);
+    Assertions.assertThrows(UnsupportedOperationException.class, () -> noll.addAll(0, list));
+    noll.addAll(list);
     Assertions.assertEquals(1000, noll.size());
 
     list.clear();
@@ -437,7 +471,7 @@ class NaturalOrderedLongListTest {
       Assertions.assertEquals(expected, listIterator.next());
       expected++;
     }
-    Assertions.assertNull(listIterator.next());
+    Assertions.assertThrows(java.util.NoSuchElementException.class, listIterator::next);
     listIterator.add(expected);
     expected++;
     Assertions.assertEquals(expected, noll.size());
@@ -448,7 +482,7 @@ class NaturalOrderedLongListTest {
       expected--;
     }
     Assertions.assertEquals(-1, expected);
-    Assertions.assertNull(listIterator.previous());
+    Assertions.assertThrows(java.util.NoSuchElementException.class, listIterator::previous);
 
     expected = 0;
     ListIterator<Long> listIterator2 = noll.listIterator();

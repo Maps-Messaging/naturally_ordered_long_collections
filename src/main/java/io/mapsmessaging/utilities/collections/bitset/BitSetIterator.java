@@ -47,18 +47,21 @@ public class BitSetIterator implements Iterator<Integer> {
 
   @Override
   public Integer next() {
-    if (current > bitSet.length()) {
+    int nextBit = bitSet.nextSetBit(current);
+    if (nextBit < 0) {
       throw new NoSuchElementException();
     }
-    active = bitSet.nextSetBit(current);
-    current = active + 1;
-    return active;
+    active = nextBit;
+    current = nextBit + 1;
+    return nextBit;
   }
 
   @Override
   public void remove() {
-    if (active != -1) {
-      bitSet.clear(active);
+    if (active < 0) {
+      throw new IllegalStateException("next() has not been called or entry already removed");
     }
+    bitSet.clear(active);
+    active = -1;
   }
 }

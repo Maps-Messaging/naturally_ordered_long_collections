@@ -54,7 +54,12 @@ public class ManagedBitSetFactoryImpl extends BitSetFactory {
       return;
     }
 
-    bitsets.remove(bitset);
+    for (int index = 0; index < bitsets.size(); index++) {
+      if (bitsets.get(index) == bitset) {
+        bitsets.remove(index);
+        break;
+      }
+    }
     if (bitsets.isEmpty()) {
       map.remove(uid);
     }

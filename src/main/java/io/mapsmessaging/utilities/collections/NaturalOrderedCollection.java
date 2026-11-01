@@ -127,17 +127,29 @@ public class NaturalOrderedCollection implements Collection<Long> {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T[] toArray(T[] a) {
-    Iterator<Long> itr = iterator();
-    for (var x = 0; x < a.length && itr.hasNext(); x++) {
-      a[x] = (T) itr.next();
+    int count = size();
+    T[] result = a.length >= count ? a : (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), count);
+    int index = 0;
+    for (Long value : this) {
+      result[index++] = (T) value;
     }
-    return a;
+    if (result.length > index) {
+      result[index] = null;
+    }
+    return result;
   }
 
   @Override
   public boolean add(Long aLong) {
     OffsetBitSet active = locate(aLong);
     if (active == null) {
+      if (tree.size() == 1) {
+        OffsetBitSet cached = tree.firstEntry().getValue();
+        if (cached.isEmpty()) {
+          tree.remove(cached.getStart());
+          factory.release(cached);
+        }
+      }
       try {
         active = factory.open(uniqueId, aLong);
       } catch (IOException e) {
@@ -154,15 +166,13 @@ public class NaturalOrderedCollection implements Collection<Long> {
       OffsetBitSet active = locate(value);
       if (active != null) {
         boolean result = active.clear(value);
-        if (result && active.isEmpty()) {
+        if (result && active.isEmpty() && tree.size() > 1) {
           tree.remove(active.getStart());
           factory.release(active);
         }
-        validateTree();
         return result;
       }
     }
-    validateTree();
     return false;
   }
 
@@ -201,6 +211,9 @@ public class NaturalOrderedCollection implements Collection<Long> {
         tree.remove(toAddBitset.getStart());
         continue;
       }
+      if (toAddBitset.isEmpty()) {
+        continue;
+      }
       OffsetBitSet copy = tree.get(toAddBitset.getStart());
       if (copy == null) {
         try {
@@ -223,12 +236,24 @@ public class NaturalOrderedCollection implements Collection<Long> {
     boolean changed = isMatching(c)
         ? removeMatching((NaturalOrderedCollection) c)
         : removeIndividually(c);
-    validateTree();
     return changed;
   }
 
   private boolean removeMatching(NaturalOrderedCollection rhs) {
     boolean changed = false;
+    if (rhs == this) {
+      Iterator<Map.Entry<Long, OffsetBitSet>> iterator = tree.entrySet().iterator();
+      while (iterator.hasNext()) {
+        OffsetBitSet current = iterator.next().getValue();
+        changed = !current.isEmpty() || changed;
+        current.clearAll();
+        if (tree.size() > 1) {
+          iterator.remove();
+          factory.release(current);
+        }
+      }
+      return changed;
+    }
     for (OffsetBitSet toRemove : rhs.tree.values()) {
       changed = removeMatchingBitSet(toRemove) || changed;
     }
@@ -243,14 +268,12 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
     int original = copy.cardinality();
     copy.getBitSet().andNot(toRemove.getBitSet());
-
-    if (!copy.isEmpty()) {
-      return original != copy.cardinality();
+    int remaining = copy.cardinality();
+    if (remaining == 0 && tree.size() > 1) {
+      tree.remove(copy.getStart());
+      factory.release(copy);
     }
-
-    tree.remove(copy.getStart());
-    factory.release(copy);
-    return true;
+    return original != remaining;
   }
 
   private boolean removeIndividually(Collection<?> collection) {
@@ -272,7 +295,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
         res = true;
       }
     }
-    validateTree();
     return res;
   }
 
@@ -294,13 +316,15 @@ public class NaturalOrderedCollection implements Collection<Long> {
         changed = true;
       }
     }
-    validateTree();
     return changed;
   }
 
   private boolean matchingRetainAll(Collection<?> c) {
     boolean changed = false;
     NaturalOrderedCollection rhs = (NaturalOrderedCollection) c;
+    if (rhs == this) {
+      return false;
+    }
     Iterator<Map.Entry<Long, OffsetBitSet>> iterator = tree.entrySet().iterator();
 
     while (iterator.hasNext()) {
@@ -309,26 +333,25 @@ public class NaturalOrderedCollection implements Collection<Long> {
       OffsetBitSet toRetain = rhs.tree.get(current.getStart());
 
       if (toRetain == null) {
+        changed = !current.isEmpty() || changed;
         current.clearAll();
-        factory.release(current);
-        iterator.remove();
-        changed = true;
+        if (tree.size() > 1) {
+          iterator.remove();
+          factory.release(current);
+        }
         continue;
       }
 
       int original = current.cardinality();
       current.getBitSet().and(toRetain.getBitSet());
-
-      if (current.isEmpty()) {
-        factory.release(current);
+      int remaining = current.cardinality();
+      if (remaining == 0 && tree.size() > 1) {
         iterator.remove();
-        changed = true;
-      } else {
-        changed = original != current.cardinality() || changed;
+        factory.release(current);
       }
+      changed = original != remaining || changed;
     }
 
-    validateTree();
     return changed;
   }
 
@@ -379,43 +402,68 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   class LongIterator implements Iterator<Long> {
 
-    ArrayList<Iterator<Long>> iterators;
-    Iterator<Long> active;
+    private final Iterator<Map.Entry<Long, OffsetBitSet>> windows;
+    private Map.Entry<Long, OffsetBitSet> activeWindow;
+    private Iterator<Long> active;
+    private boolean prepared;
+    private Long lastReturned;
 
     LongIterator() {
-      iterators = new ArrayList<>();
-      for (OffsetBitSet bitMap : tree.values()) {
-        iterators.add(bitMap.iterator());
+      List<Map.Entry<Long, OffsetBitSet>> snapshot = new ArrayList<>(tree.size());
+      for (Map.Entry<Long, OffsetBitSet> entry : tree.entrySet()) {
+        snapshot.add(new AbstractMap.SimpleImmutableEntry<>(entry));
       }
+      windows = snapshot.iterator();
     }
 
     @Override
     public boolean hasNext() {
-      if (active == null) {
-        if (!iterators.isEmpty()) {
-          active = iterators.remove(0);
-        } else {
+      while (true) {
+        if (active != null) {
+          if (tree.get(activeWindow.getKey()) != activeWindow.getValue()) {
+            active = null;
+            activeWindow = null;
+            prepared = false;
+          } else {
+            if (prepared) {
+              return true;
+            }
+            if (active.hasNext()) {
+              prepared = true;
+              return true;
+            }
+            active = null;
+            activeWindow = null;
+          }
+        }
+        if (!windows.hasNext()) {
           return false;
         }
+        Map.Entry<Long, OffsetBitSet> window = windows.next();
+        if (tree.get(window.getKey()) == window.getValue()) {
+          activeWindow = window;
+          active = window.getValue().iterator();
+        }
       }
-      if (active.hasNext()) {
-        return true;
-      }
-      active = null;
-      return hasNext();
     }
 
     @Override
     public Long next() {
-      if (active != null) {
-        return active.next();
+      if (!hasNext()) {
+        throw new NoSuchElementException();
       }
-      return null;
+      prepared = false;
+      lastReturned = active.next();
+      return lastReturned;
     }
 
     @Override
     public void remove() {
-      active.remove();
+      if (lastReturned == null) {
+        throw new IllegalStateException("next() has not been called or the element has already been removed");
+      }
+      NaturalOrderedCollection.this.remove(lastReturned);
+      lastReturned = null;
     }
 
     @Override
