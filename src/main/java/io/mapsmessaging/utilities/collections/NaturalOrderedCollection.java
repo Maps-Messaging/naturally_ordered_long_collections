@@ -238,6 +238,19 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
   private boolean removeMatching(NaturalOrderedCollection rhs) {
     boolean changed = false;
+    if (rhs == this) {
+      Iterator<Map.Entry<Long, OffsetBitSet>> iterator = tree.entrySet().iterator();
+      while (iterator.hasNext()) {
+        OffsetBitSet current = iterator.next().getValue();
+        changed = !current.isEmpty() || changed;
+        current.clearAll();
+        if (tree.size() > 1) {
+          iterator.remove();
+          factory.release(current);
+        }
+      }
+      return changed;
+    }
     for (OffsetBitSet toRemove : rhs.tree.values()) {
       changed = removeMatchingBitSet(toRemove) || changed;
     }
@@ -252,14 +265,12 @@ public class NaturalOrderedCollection implements Collection<Long> {
 
     int original = copy.cardinality();
     copy.getBitSet().andNot(toRemove.getBitSet());
-
-    if (!copy.isEmpty()) {
-      return original != copy.cardinality();
+    int remaining = copy.cardinality();
+    if (remaining == 0 && tree.size() > 1) {
+      tree.remove(copy.getStart());
+      factory.release(copy);
     }
-
-    tree.remove(copy.getStart());
-    factory.release(copy);
-    return true;
+    return original != remaining;
   }
 
   private boolean removeIndividually(Collection<?> collection) {
@@ -308,6 +319,9 @@ public class NaturalOrderedCollection implements Collection<Long> {
   private boolean matchingRetainAll(Collection<?> c) {
     boolean changed = false;
     NaturalOrderedCollection rhs = (NaturalOrderedCollection) c;
+    if (rhs == this) {
+      return false;
+    }
     Iterator<Map.Entry<Long, OffsetBitSet>> iterator = tree.entrySet().iterator();
 
     while (iterator.hasNext()) {
@@ -316,23 +330,23 @@ public class NaturalOrderedCollection implements Collection<Long> {
       OffsetBitSet toRetain = rhs.tree.get(current.getStart());
 
       if (toRetain == null) {
+        changed = !current.isEmpty() || changed;
         current.clearAll();
-        factory.release(current);
-        iterator.remove();
-        changed = true;
+        if (tree.size() > 1) {
+          iterator.remove();
+          factory.release(current);
+        }
         continue;
       }
 
       int original = current.cardinality();
       current.getBitSet().and(toRetain.getBitSet());
-
-      if (current.isEmpty()) {
-        factory.release(current);
+      int remaining = current.cardinality();
+      if (remaining == 0 && tree.size() > 1) {
         iterator.remove();
-        changed = true;
-      } else {
-        changed = original != current.cardinality() || changed;
+        factory.release(current);
       }
+      changed = original != remaining || changed;
     }
 
     return changed;
@@ -388,6 +402,7 @@ public class NaturalOrderedCollection implements Collection<Long> {
     ArrayList<Iterator<Long>> iterators;
     Iterator<Long> active;
     private boolean prepared;
+    private Long lastReturned;
 
     LongIterator() {
       iterators = new ArrayList<>();
@@ -422,12 +437,17 @@ public class NaturalOrderedCollection implements Collection<Long> {
         throw new NoSuchElementException();
       }
       prepared = false;
-      return active.next();
+      lastReturned = active.next();
+      return lastReturned;
     }
 
     @Override
     public void remove() {
-      active.remove();
+      if (lastReturned == null) {
+        throw new IllegalStateException("next() has not been called or the element has already been removed");
+      }
+      NaturalOrderedCollection.this.remove(lastReturned);
+      lastReturned = null;
     }
 
     @Override

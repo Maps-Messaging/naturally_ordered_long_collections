@@ -103,6 +103,7 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
     ArrayList<ListIterator<Long>> iterators;
     int iteratorIndex;
     ListIterator<Long> active;
+    private Long lastReturned;
 
     LongListIterator() {
       iterators = new ArrayList<>();
@@ -141,7 +142,8 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
       if (!hasNext()) {
         throw new NoSuchElementException();
       }
-      return active.next();
+      lastReturned = active.next();
+      return lastReturned;
     }
 
     @Override
@@ -173,7 +175,8 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
       if (!hasPrevious()) {
         throw new NoSuchElementException();
       }
-      return active.previous();
+      lastReturned = active.previous();
+      return lastReturned;
     }
 
     @Override
@@ -188,9 +191,11 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
 
     @Override
     public void remove() {
-      if (active != null) {
-        active.remove();
+      if (lastReturned == null) {
+        throw new IllegalStateException("next()/previous() has not been called or the element has already been removed");
       }
+      NaturalOrderedLongList.this.remove(lastReturned);
+      lastReturned = null;
     }
 
     @Override
@@ -203,6 +208,7 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
       boolean atEnd = active == null && (iteratorIndex >= iterators.size() || iterators.isEmpty());
       OffsetBitSet lastWindow = atEnd && !tree.isEmpty() ? tree.lastEntry().getValue() : null;
       NaturalOrderedLongList.this.add(aLong);
+      lastReturned = null;
 
       if (atEnd) {
         OffsetBitSet insertedWindow = tree.get(factory.getStartIndex(aLong));
