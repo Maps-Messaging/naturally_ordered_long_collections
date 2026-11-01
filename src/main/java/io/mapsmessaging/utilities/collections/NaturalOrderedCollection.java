@@ -211,6 +211,9 @@ public class NaturalOrderedCollection implements Collection<Long> {
         tree.remove(toAddBitset.getStart());
         continue;
       }
+      if (toAddBitset.isEmpty()) {
+        continue;
+      }
       OffsetBitSet copy = tree.get(toAddBitset.getStart());
       if (copy == null) {
         try {

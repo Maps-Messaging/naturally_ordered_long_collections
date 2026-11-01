@@ -314,7 +314,7 @@ class MSG423ServerAssumptionsTest {
       NaturalOrderedLongQueue interest = new NaturalOrderedLongQueue(18L, factory);
       assertValues(candidates, 4095L, 4097L);
       assertValues(interest, 4096L, 8192L);
-      Assertions.assertTrue(candidates.removeAll(interest));
+      Assertions.assertFalse(candidates.removeAll(interest));
       assertValues(candidates, 4095L, 4097L);
       candidates.close();
       interest.close();
