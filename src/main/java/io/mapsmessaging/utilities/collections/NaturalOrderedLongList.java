@@ -100,83 +100,68 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
   // <editor-fold desc="Standard Iterator">
   class LongListIterator implements ListIterator<Long> {
 
-    ArrayList<ListIterator<Long>> iterators;
-    int iteratorIndex;
-    ListIterator<Long> active;
+    // The cursor is the last value before the next forward position.  No bitset
+    // iterators are retained, since released file-backed windows can be reused.
+    private Long cursor;
     private Long lastReturned;
 
-    LongListIterator() {
-      iterators = new ArrayList<>();
-      for (OffsetBitSet bitMap : tree.values()) {
-        iterators.add(bitMap.listIterator());
+    private Long nextValue() {
+      if (cursor != null && cursor == Long.MAX_VALUE) {
+        return null;
       }
-      if (iterators.isEmpty()) {
-        active = null;
-        iteratorIndex = -1;
-      } else {
-        active = iterators.get(0);
-        iteratorIndex = 0;
+      long from = cursor == null ? Long.MIN_VALUE : cursor + 1L;
+      for (OffsetBitSet window : tree.tailMap(factory.getStartIndex(from), true).values()) {
+        Long value = window.nextSetBit(from);
+        if (value != null) {
+          return value;
+        }
       }
+      return null;
+    }
+
+    private Long previousValue(Long from) {
+      if (from == null) {
+        return null;
+      }
+      for (OffsetBitSet window : tree.headMap(factory.getStartIndex(from), true).descendingMap().values()) {
+        Long value = window.previousSetBit(from);
+        if (value != null) {
+          return value;
+        }
+      }
+      return null;
     }
 
     @Override
     public boolean hasNext() {
-      if (active == null) {
-        return false;
-      }
-      if (active.hasNext()) {
-        return true;
-      } else {
-        iteratorIndex++;
-        if (iteratorIndex >= iterators.size()) {
-          active = null;
-          return false;
-        }
-        active = iterators.get(iteratorIndex);
-        return hasNext();
-      }
+      return nextValue() != null;
     }
 
     @Override
     public Long next() {
-      if (!hasNext()) {
+      Long value = nextValue();
+      if (value == null) {
         throw new NoSuchElementException();
       }
-      lastReturned = active.next();
-      return lastReturned;
+      cursor = value;
+      lastReturned = value;
+      return value;
     }
 
     @Override
     public boolean hasPrevious() {
-      if (active == null) {
-        if (iteratorIndex >= iterators.size()) {
-          iteratorIndex = iterators.size() - 1;
-        }
-        if (iteratorIndex < 0) {
-          return false;
-        }
-        active = iterators.get(iteratorIndex);
-      }
-      if (active.hasPrevious()) {
-        return true;
-      } else {
-        iteratorIndex--;
-        if (iteratorIndex < 0) {
-          active = null;
-          return false;
-        }
-        active = iterators.get(iteratorIndex);
-        return hasPrevious();
-      }
+      return previousValue(cursor) != null;
     }
 
     @Override
     public Long previous() {
-      if (!hasPrevious()) {
+      Long value = previousValue(cursor);
+      if (value == null) {
         throw new NoSuchElementException();
       }
-      lastReturned = active.previous();
-      return lastReturned;
+      cursor = value == Long.MIN_VALUE ? null : previousValue(value - 1L);
+      lastReturned = value;
+      return value;
     }
 
     @Override
@@ -205,32 +190,16 @@ public class NaturalOrderedLongList extends NaturalOrderedCollection implements 
 
     @Override
     public void add(Long aLong) {
-      boolean atEnd = active == null && (iteratorIndex >= iterators.size() || iterators.isEmpty());
-      OffsetBitSet lastWindow = atEnd && !tree.isEmpty() ? tree.lastEntry().getValue() : null;
       NaturalOrderedLongList.this.add(aLong);
+      cursor = aLong;
       lastReturned = null;
-
-      if (atEnd) {
-        OffsetBitSet insertedWindow = tree.get(factory.getStartIndex(aLong));
-        if (insertedWindow == lastWindow && !iterators.isEmpty()) {
-          active = iterators.get(iterators.size() - 1);
-        } else if (insertedWindow != null &&
-            (lastWindow == null || insertedWindow.getStart() > lastWindow.getStart())) {
-          active = insertedWindow.listIterator();
-          iterators.add(active);
-        }
-        if (active != null) {
-          iteratorIndex = iterators.size() - 1;
-          active.add(aLong);
-        }
-      }
     }
 
     @Override
     public void forEachRemaining(Consumer<? super Long> action) {
       Objects.requireNonNull(action);
-      while (hasNext())
+      while (hasNext()) {
         action.accept(next());
+      }
     }
-  }
 }
