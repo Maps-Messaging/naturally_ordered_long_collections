@@ -228,6 +228,36 @@ class MSG423RemovalLifecycleTest {
   }
 
   @Test
+  void fileBackedIteratorAndPlainRetainCleanupSurviveRestart(@TempDir Path tempDir) throws IOException {
+    String base = tempDir.resolve("subscription-cleanup.bin").toString();
+    long sessionId = -1L;
+    try (SharedFileBitSetFactoryImpl factory = new SharedFileBitSetFactoryImpl(base, 4, 64)) {
+      NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue(sessionId, factory);
+      for (long id : new long[]{-65L, -1L, 0L, 64L, 128L}) {
+        queue.offer(id);
+      }
+
+      Assertions.assertTrue(queue.removeIf(id -> id < 0L));
+      Assertions.assertEquals(List.of(0L, 64L, 128L), new ArrayList<>(queue));
+      Assertions.assertEquals(3, queue.tree.size());
+      Assertions.assertTrue(queue.retainAll(List.of()));
+      assertOneEmptyWindow(queue);
+      Assertions.assertEquals(1, factory.get(sessionId).size());
+      Assertions.assertEquals(4, factory.getFreeBitSets().size());
+      queue.close();
+    }
+
+    try (SharedFileBitSetFactoryImpl factory = new SharedFileBitSetFactoryImpl(base, 4, 64)) {
+      NaturalOrderedLongQueue restored = new NaturalOrderedLongQueue(sessionId, factory);
+      assertOneEmptyWindow(restored);
+      Assertions.assertTrue(restored.offer(129L));
+      Assertions.assertEquals(129L, restored.poll());
+      assertOneEmptyWindow(restored);
+      restored.close();
+    }
+  }
+
+  @Test
   void bulkMillionEventRemovalKeepsSingleReusableWindow() {
     CountingFactory factory = new CountingFactory(4096);
     NaturalOrderedLongQueue queue = new NaturalOrderedLongQueue(17L, factory);
