@@ -170,11 +170,9 @@ public class NaturalOrderedCollection implements Collection<Long> {
           tree.remove(active.getStart());
           factory.release(active);
         }
-        validateTree();
         return result;
       }
     }
-    validateTree();
     return false;
   }
 
@@ -235,7 +233,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
     boolean changed = isMatching(c)
         ? removeMatching((NaturalOrderedCollection) c)
         : removeIndividually(c);
-    validateTree();
     return changed;
   }
 
@@ -284,7 +281,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
         res = true;
       }
     }
-    validateTree();
     return res;
   }
 
@@ -306,7 +302,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
         changed = true;
       }
     }
-    validateTree();
     return changed;
   }
 
@@ -340,7 +335,6 @@ public class NaturalOrderedCollection implements Collection<Long> {
       }
     }
 
-    validateTree();
     return changed;
   }
 
