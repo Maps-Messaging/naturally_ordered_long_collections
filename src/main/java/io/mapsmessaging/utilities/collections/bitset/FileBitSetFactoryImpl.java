@@ -20,12 +20,13 @@
 
 package io.mapsmessaging.utilities.collections.bitset;
 
-import io.mapsmessaging.utilities.collections.MappedBufferHelper;
 import lombok.Getter;
 import lombok.NonNull;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -55,6 +56,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   @Getter
   private final int shard;
   private RandomAccessFile raf;
+  private Arena mappingArena;
   private boolean closed;
   private boolean deleted;
 
@@ -98,6 +100,11 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     }
     try {
       clearList(free);
+    } catch (RuntimeException cleanupFailure) {
+      failure.addSuppressed(cleanupFailure);
+    }
+    try {
+      closeMappingArena();
     } catch (RuntimeException cleanupFailure) {
       failure.addSuppressed(cleanupFailure);
     }
@@ -230,6 +237,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     boolean delete = used.isEmpty();
     clearList(used);
     clearList(free);
+    closeMappingArena();
     if (raf != null && raf.getChannel().isOpen()) {
       raf.close();
     }
@@ -251,6 +259,7 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
     if (raf != null && raf.getChannel().isOpen()) {
       clearList(used);
       clearList(free);
+      closeMappingArena();
       raf.close();
     }
     File file = new File(filename);
@@ -350,7 +359,18 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
   }
 
   private ByteBufferBackedBitMap map(long pos, long uniqueId) throws IOException {
-    return new ByteBufferBackedBitMap(raf.getChannel().map(MapMode.READ_WRITE, pos, bufferSize), 0, uniqueId);
+    if (mappingArena == null) {
+      mappingArena = Arena.ofShared();
+    }
+    MemorySegment segment = raf.getChannel().map(MapMode.READ_WRITE, pos, bufferSize, mappingArena);
+    return new ByteBufferBackedBitMap(segment.asByteBuffer(), 0, uniqueId);
+  }
+
+  private void closeMappingArena() {
+    if (mappingArena != null) {
+      mappingArena.close();
+      mappingArena = null;
+    }
   }
 
   private synchronized List<OffsetBitSet> getList(List<FileOffsetBitSet> list, long uniqueId) {
@@ -383,15 +403,10 @@ public class FileBitSetFactoryImpl extends BitSetFactory {
       if (bitmap.isActive()) {
         ByteBufferBackedBitMap mapped = (ByteBufferBackedBitMap) bitmap.getBitSet();
         bitmap.releaseBitSet();
-        unmap(mapped);
+        mapped.clearBacking();
       }
     }
     list.clear();
-  }
-
-  private void unmap(@NonNull @NotNull ByteBufferBackedBitMap mapped) {
-    ByteBuffer backing = mapped.clearBacking();
-    MappedBufferHelper.closeDirectBuffer(backing);
   }
 
   private synchronized void checkState() {
