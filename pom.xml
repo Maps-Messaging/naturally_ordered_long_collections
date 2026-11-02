@@ -71,8 +71,8 @@
   <properties>
     <dependency.check.autoUpdate>true</dependency.check.autoUpdate>
     <dependency.check.dataDirectory>${user.home}/.m2/repository/org/owasp/dependency-check-data/</dependency.check.dataDirectory>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.source>25</maven.compiler.source>
+    <maven.compiler.target>25</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <gpg.keyname>admin@mapsmessaging.io</gpg.keyname>
 
@@ -180,8 +180,8 @@
             <arg>src/main/cpp/</arg>
           </compilerArgs>
           <encoding>UTF-8</encoding>
-          <source>17</source>
-          <target>17</target>
+          <source>25</source>
+          <target>25</target>
           <annotationProcessorPaths>
             <path>
               <groupId>org.projectlombok</groupId>
