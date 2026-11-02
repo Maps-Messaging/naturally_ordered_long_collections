@@ -29,7 +29,6 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Files;
 import java.util.ArrayList;
